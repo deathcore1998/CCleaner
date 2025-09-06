@@ -1,0 +1,26 @@
+# ==============================
+# CMake build folders
+# ==============================
+/build/
+/out/
+/CMakeFiles/
+/CMakeCache.txt
+/*.cmake
+/CMakeSettings.json
+
+# ==============================
+# Visual Studio
+# ==============================
+*.sln
+*.vcxproj*
+*.vcxproj.filters
+*.user
+*.opensdf
+*.sdf
+*.VC.db
+*.ipch
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.vs/*
