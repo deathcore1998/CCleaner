@@ -3,7 +3,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-#include "gui.hpp"
+#include "gui/gui.hpp"
 
 App::App() : m_title( "CCleaner" )
 {

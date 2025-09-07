@@ -33,13 +33,13 @@ add_executable(CCleaner
 
 set(GUI_DIR ${CMAKE_SOURCE_DIR}/source/gui)
 set(APP_DIR ${CMAKE_SOURCE_DIR}/source/app)
+set(WIDGETS_DIR ${GUI_DIR}/widgets)
 
 target_include_directories(CCleaner PRIVATE
 	${imgui_SOURCE_DIR}
 	${imgui_SOURCE_DIR}/backends
 
-	${GUI_DIR}
-	${APP_DIR}
+	${CMAKE_SOURCE_DIR}/source
 )
 
 target_sources(CCleaner PRIVATE
@@ -48,6 +48,11 @@ target_sources(CCleaner PRIVATE
 
 	${APP_DIR}/app.cpp
 	${APP_DIR}/app.hpp
+
+	${WIDGETS_DIR}/widget.cpp
+	${WIDGETS_DIR}/widget.hpp
+	${WIDGETS_DIR}/title_bar.cpp
+	${WIDGETS_DIR}/title_bar.hpp
 )
 
 target_link_libraries(CCleaner PRIVATE
