@@ -5,7 +5,7 @@
 
 #include "gui/gui.hpp"
 
-App::App() : m_title( "CCleaner" )
+App::App()
 {
 	initWindow();
 	initGui();
@@ -13,7 +13,7 @@ App::App() : m_title( "CCleaner" )
 
 void App::run()
 {
-	gui::Gui gui;
+	gui::Gui gui( m_window );
 
 	while ( !glfwWindowShouldClose( m_window ) )
 	{
@@ -48,10 +48,10 @@ void App::initWindow()
 	}
 
 	// disable up border
-	//glfwWindowHint( GLFW_DECORATED, GLFW_FALSE );
+	glfwWindowHint( GLFW_DECORATED, GLFW_FALSE );
 	
 	// create glfw window
-	m_window = glfwCreateWindow( 800, 800, m_title.c_str(), NULL, NULL );
+	m_window = glfwCreateWindow( 800, 800, "", NULL, NULL );
 	if ( !m_window )
 	{
 		glfwTerminate();

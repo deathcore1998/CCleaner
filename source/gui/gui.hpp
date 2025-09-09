@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GLFW/glfw3.h>
 #include "widgets/title_bar.hpp"
 
 namespace gui
@@ -7,12 +8,13 @@ namespace gui
 	class Gui
 	{
 	public:
-		Gui();
+		Gui( GLFWwindow* window );
 		~Gui();
 
 		void render();
 
 	private:
+		GLFWwindow* m_window = nullptr;
 		Widget* m_titleBar = nullptr;
 	};
 }

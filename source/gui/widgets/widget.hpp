@@ -1,16 +1,18 @@
 #pragma once
 
+#include <string>
+
 namespace gui
 {
 	class Widget
 	{
 	public:
-		Widget() = default;
+		Widget( std::string title ) : m_title( std::move( title ) ) {}
 		~Widget() = default;
 
 		virtual void draw() = 0;
 
-	private:
-
+	protected:
+		std::string m_title;
 	};
 }

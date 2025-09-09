@@ -17,7 +17,6 @@ private:
 	void initGui();
 	void cleanUp();
 
+	// need create a wrapper
 	GLFWwindow* m_window;
-
-	std::string m_title;
 };
