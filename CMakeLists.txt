@@ -20,7 +20,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-add_executable(CCleaner
+add_executable(CCleaner WIN32
 	source/main.cpp
 	${imgui_SOURCE_DIR}/imgui.cpp
 	${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -30,6 +30,10 @@ add_executable(CCleaner
 	${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
 	${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
+
+if (MSVC)
+    target_link_options(CCleaner PRIVATE "/ENTRY:mainCRTStartup")
+endif()
 
 set(GUI_DIR ${CMAKE_SOURCE_DIR}/source/gui)
 set(APP_DIR ${CMAKE_SOURCE_DIR}/source/app)
