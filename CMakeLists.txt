@@ -20,6 +20,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
+FetchContent_Declare(
+	bs_thread_pool
+	GIT_REPOSITORY https://github.com/bshoshany/thread-pool.git
+	GIT_TAG v4.1.0
+)
+FetchContent_MakeAvailable(bs_thread_pool)
+
 add_executable(CCleaner WIN32
 	source/main.cpp
 	${imgui_SOURCE_DIR}/imgui.cpp
@@ -37,6 +44,7 @@ endif()
 
 set(GUI_DIR ${CMAKE_SOURCE_DIR}/source/gui)
 set(APP_DIR ${CMAKE_SOURCE_DIR}/source/app)
+set(UTILS_DIR ${CMAKE_SOURCE_DIR}/source/utils)
 set(WIDGETS_DIR ${GUI_DIR}/widgets)
 
 target_include_directories(CCleaner PRIVATE
@@ -44,6 +52,8 @@ target_include_directories(CCleaner PRIVATE
 	${imgui_SOURCE_DIR}/backends
 
 	${CMAKE_SOURCE_DIR}/source
+
+	${bs_thread_pool_SOURCE_DIR}/include
 )
 
 target_sources(CCleaner PRIVATE
@@ -57,6 +67,11 @@ target_sources(CCleaner PRIVATE
 	${WIDGETS_DIR}/widget.hpp
 	${WIDGETS_DIR}/title_bar.cpp
 	${WIDGETS_DIR}/title_bar.hpp
+	${WIDGETS_DIR}/cleaner_panel.cpp
+	${WIDGETS_DIR}/cleaner_panel.hpp
+
+	${UTILS_DIR}/task_manager.cpp
+	${UTILS_DIR}/task_manager.hpp
 )
 
 target_link_libraries(CCleaner PRIVATE

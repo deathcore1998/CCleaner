@@ -1,6 +1,8 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+
+#include "widgets/cleaner_panel.hpp"
 #include "widgets/title_bar.hpp"
 
 namespace gui
@@ -15,6 +17,7 @@ namespace gui
 
 	private:
 		GLFWwindow* m_window = nullptr;
-		Widget* m_titleBar = nullptr;
+		TitleBar* m_titleBar = nullptr;
+		CleanerPanel* m_cleanerPanel = nullptr;
 	};
 }
