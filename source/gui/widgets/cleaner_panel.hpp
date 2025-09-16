@@ -1,6 +1,13 @@
 #pragma once
 
+#include <memory>
+
 #include "gui/widgets/widget.hpp"
+
+namespace core
+{
+	class SystemCleaner;
+}
 
 namespace gui
 {
@@ -12,6 +19,6 @@ namespace gui
 		void draw() override;
 
 	private:
-
+		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
 	};
 }

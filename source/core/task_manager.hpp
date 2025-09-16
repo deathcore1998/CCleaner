@@ -4,7 +4,7 @@
 
 #include <functional>
 
-namespace utils
+namespace core
 {
 	class TaskManager
 	{

@@ -45,6 +45,7 @@ endif()
 set(GUI_DIR ${CMAKE_SOURCE_DIR}/source/gui)
 set(APP_DIR ${CMAKE_SOURCE_DIR}/source/app)
 set(UTILS_DIR ${CMAKE_SOURCE_DIR}/source/utils)
+set(CORE_DIR ${CMAKE_SOURCE_DIR}/source/core)
 set(WIDGETS_DIR ${GUI_DIR}/widgets)
 
 target_include_directories(CCleaner PRIVATE
@@ -70,8 +71,13 @@ target_sources(CCleaner PRIVATE
 	${WIDGETS_DIR}/cleaner_panel.cpp
 	${WIDGETS_DIR}/cleaner_panel.hpp
 
-	${UTILS_DIR}/task_manager.cpp
-	${UTILS_DIR}/task_manager.hpp
+	${CORE_DIR}/task_manager.cpp
+	${CORE_DIR}/task_manager.hpp
+	${CORE_DIR}/system_cleaner.cpp
+	${CORE_DIR}/system_cleaner.hpp
+
+	${UTILS_DIR}/filesystem.cpp
+	${UTILS_DIR}/filesystem.hpp
 )
 
 target_link_libraries(CCleaner PRIVATE

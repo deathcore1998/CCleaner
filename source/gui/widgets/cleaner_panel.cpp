@@ -1,9 +1,11 @@
 #include "cleaner_panel.hpp"
 
 #include <imgui.h>
+#include "core/system_cleaner.hpp"
 
 gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel")
 {
+	m_systemCleaner = std::make_unique< core::SystemCleaner >();
 }
 
 void gui::CleanerPanel::draw()
@@ -19,7 +21,7 @@ void gui::CleanerPanel::draw()
 	{
 		if ( ImGui::Button( "Clear" ) )
 		{
-			// 
+			m_systemCleaner->cleanTemp();
 		}
 	}
 	ImGui::End();
