@@ -6,23 +6,17 @@
 gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel")
 {
 	m_systemCleaner = std::make_unique< core::SystemCleaner >();
+	m_browsersList = std::move ( m_systemCleaner->getInstalledBrowsers() );
 }
 
 void gui::CleanerPanel::draw()
 {
-	const float offsetY = ImGui::GetCursorPosY();
-	const ImVec2 panelSize = ImVec2( ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y - offsetY);
+	ImGui::BeginChild( "Cleaner panel", ImVec2( 0, 0 ), false );
 
-	ImGui::SetNextWindowPos( ImVec2( 0, offsetY ) );
-	ImGui::SetNextWindowSize( panelSize );
-
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize;
-	ImGui::Begin( "Cleaner panel", nullptr, flags );
+	if ( ImGui::Button( "Clear" ) )
 	{
-		if ( ImGui::Button( "Clear" ) )
-		{
-			m_systemCleaner->cleanTemp();
-		}
-	}
-	ImGui::End();
+		m_systemCleaner->cleanTemp();
+	}	
+
+	ImGui::EndChild();
 }

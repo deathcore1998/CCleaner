@@ -21,14 +21,7 @@ gui::TitleBar::~TitleBar()
 
 void gui::TitleBar::draw()
 {
-	const ImGuiViewport* viewport = ImGui::GetMainViewport();
-	const ImVec2 viewportPos = viewport->Pos;
-	const ImVec2 viewportSize = viewport->Size;
-
-	ImGui::SetNextWindowPos( viewportPos );
-	ImGui::SetNextWindowSize( ImVec2( viewport->Size.x, TITLE_HEIGHT ) );
-
-	ImGui::Begin( "##TitleBar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings );
+	ImGui::BeginChild( "TitleBar", ImVec2( 0, TITLE_HEIGHT ), false );
 
 	draggingWindow();
 
@@ -36,14 +29,18 @@ void gui::TitleBar::draw()
 
 	drawButtons();
 
-	ImGui::End();
+	ImVec2 winPos = ImGui::GetWindowPos();
+	ImVec2 winSize = ImGui::GetWindowSize();
+
+	// FIXME add separet
+
+	ImGui::EndChild();
 }
 
 void gui::TitleBar::drawButtons()
 {
 	// FIXME disabeling dragging for the buttons
-	const ImGuiViewport* viewport = ImGui::GetMainViewport();
-	const ImVec2 viewportSize = viewport->Size;
+	const ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
 	// FIXME calculate button size
 	ImGui::SameLine( viewportSize.x - 20.0f );
@@ -53,15 +50,9 @@ void gui::TitleBar::drawButtons()
 	}
 
 	ImGui::SameLine( viewportSize.x - 40.0f );
-	if ( ImGui::Button( "0" ) )
-	{
-		
-	}
-
-	ImGui::SameLine( viewportSize.x - 60.0f );
 	if ( ImGui::Button( "_" ) )
 	{
-		
+		glfwIconifyWindow( m_mainWindow );
 	}
 }
 

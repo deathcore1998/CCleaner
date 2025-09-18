@@ -16,6 +16,15 @@ gui::Gui::~Gui()
 
 void gui::Gui::render()
 {
+    const ImVec2 viewportSize = ImGui::GetMainViewport()->Size;
+
+    ImGui::SetNextWindowPos( ImVec2( 0, 0 ) );
+    ImGui::SetNextWindowSize( viewportSize );
+
+    ImGui::Begin( "MainWindow", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings );
+
     m_titleBar->draw();
     m_cleanerPanel->draw();
+
+    ImGui::End();
 }

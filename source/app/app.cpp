@@ -26,7 +26,7 @@ void App::run()
 		gui.render();
 
 		ImGui::Render();
-		glViewport( 0, 0, 800, 800 );
+		glViewport( 0, 0, 800, 600 );
 		glClearColor( 0.2f, 0.3f, 0.4f, 1.0f );
 		glClear( GL_COLOR_BUFFER_BIT );
 		ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
@@ -51,7 +51,7 @@ void App::initWindow()
 	glfwWindowHint( GLFW_DECORATED, GLFW_FALSE );
 	
 	// create glfw window
-	m_window = glfwCreateWindow( 800, 800, "", NULL, NULL );
+	m_window = glfwCreateWindow( 800, 600, "", NULL, NULL );
 	if ( !m_window )
 	{
 		glfwTerminate();
