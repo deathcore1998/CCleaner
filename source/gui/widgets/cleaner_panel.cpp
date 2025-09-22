@@ -11,12 +11,29 @@ gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel")
 
 void gui::CleanerPanel::draw()
 {
+	// FIXME need RAII wrappers
+	ImGui::PushStyleColor( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
 	ImGui::BeginChild( "Cleaner panel", ImVec2( 0, 0 ), false );
 
-	if ( ImGui::Button( "Clear" ) )
+	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable;
+	ImGui::BeginTable( "CleanerTable", 3, tableFlags, ImVec2( 0, 0 ) );
 	{
-		m_systemCleaner->cleanTemp();
-	}	
+		ImGui::TableSetupColumn( "Options", ImGuiTableColumnFlags_WidthStretch, 1.0f );
+		ImGui::TableSetupColumn( "Settings", ImGuiTableColumnFlags_WidthStretch, 1.0f );
+		ImGui::TableSetupColumn( "Main", ImGuiTableColumnFlags_WidthStretch, 3.0f );
+
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Selectable( "Browsers" );
+
+		ImGui::TableNextColumn();
+		for ( const std::string browser : m_browsersList )
+		{
+			ImGui::Text( browser.c_str() );
+		}
+	}
+	ImGui::EndTable();
 
 	ImGui::EndChild();
+	ImGui::PopStyleColor();
 }

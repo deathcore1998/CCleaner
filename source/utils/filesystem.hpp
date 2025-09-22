@@ -17,7 +17,8 @@ namespace utils
 		}
 
 		fs::path getTempDir();
-		fs::path getAppDataDir();
+		fs::path getLocalAppDataDir();
+		fs::path getRoamingAppDataDir();
 
 	private:
 		FileSystem(){}

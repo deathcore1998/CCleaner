@@ -2,16 +2,17 @@
 
 fs::path utils::FileSystem::getTempDir()
 {
-	fs::path path = fs::temp_directory_path();
-	return path;
+	return fs::temp_directory_path();
 }
 
-fs::path utils::FileSystem::getAppDataDir()
+fs::path utils::FileSystem::getLocalAppDataDir()
 {
 	const char* localAppData = std::getenv( "LOCALAPPDATA" );
-	if ( localAppData )
-	{
-		return fs::path( localAppData );
-	}
-	return fs::path();
+	return fs::path( localAppData );
+}
+
+fs::path utils::FileSystem::getRoamingAppDataDir()
+{
+	const char* localAppData = std::getenv( "APPDATA" );
+	return fs::path( localAppData );
 }

@@ -25,7 +25,7 @@ void gui::TitleBar::draw()
 
 	draggingWindow();
 
-	ImGui::Text( m_title.c_str() );
+	ImGui::Text( "System Cleaner" );
 
 	drawButtons();
 
