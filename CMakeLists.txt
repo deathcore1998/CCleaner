@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CCleaner LANGUAGES CXX)
+project(SystemCleaner LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,7 +27,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(bs_thread_pool)
 
-add_executable(CCleaner WIN32
+add_executable(SystemCleaner WIN32
 	source/main.cpp
 	${imgui_SOURCE_DIR}/imgui.cpp
 	${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -39,7 +39,7 @@ add_executable(CCleaner WIN32
 )
 
 if (MSVC)
-    target_link_options(CCleaner PRIVATE "/ENTRY:mainCRTStartup")
+    target_link_options(SystemCleaner PRIVATE "/ENTRY:mainCRTStartup")
 endif()
 
 set(GUI_DIR ${CMAKE_SOURCE_DIR}/source/gui)
@@ -48,7 +48,7 @@ set(UTILS_DIR ${CMAKE_SOURCE_DIR}/source/utils)
 set(CORE_DIR ${CMAKE_SOURCE_DIR}/source/core)
 set(WIDGETS_DIR ${GUI_DIR}/widgets)
 
-target_include_directories(CCleaner PRIVATE
+target_include_directories(SystemCleaner PRIVATE
 	${imgui_SOURCE_DIR}
 	${imgui_SOURCE_DIR}/backends
 
@@ -57,7 +57,7 @@ target_include_directories(CCleaner PRIVATE
 	${bs_thread_pool_SOURCE_DIR}/include
 )
 
-target_sources(CCleaner PRIVATE
+target_sources(SystemCleaner PRIVATE
 	${GUI_DIR}/gui.cpp
 	${GUI_DIR}/gui.hpp
 
@@ -80,7 +80,7 @@ target_sources(CCleaner PRIVATE
 	${UTILS_DIR}/filesystem.hpp
 )
 
-target_link_libraries(CCleaner PRIVATE
+target_link_libraries(SystemCleaner PRIVATE
 	glfw
 	opengl32
 )
