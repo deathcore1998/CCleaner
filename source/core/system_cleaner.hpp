@@ -8,12 +8,6 @@ namespace core
 {
 	class SystemCleaner
 	{
-		struct BrowserInfo
-		{
-			std::string name;
-			std::filesystem::path cachePath;
-		};
-
 	public:
 		SystemCleaner();
 		~SystemCleaner(){}
@@ -23,10 +17,6 @@ namespace core
 
 		[[nodiscard]] std::vector< std::string > getInstalledBrowsers();
 	private:
-		void detectInstalledBrowsers();
-
 		void clearDir( const std::filesystem::path& pathDir );
-
-		std::vector< BrowserInfo > m_browsers;
 	};
 }

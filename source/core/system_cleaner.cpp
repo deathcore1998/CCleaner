@@ -8,7 +8,6 @@
 
 core::SystemCleaner::SystemCleaner()
 {
-	detectInstalledBrowsers();
 }
 
 void core::SystemCleaner::cleanTemp()
@@ -28,24 +27,15 @@ void core::SystemCleaner::cleanBrowserCache( const std::string browseName )
 
 std::vector< std::string > core::SystemCleaner::getInstalledBrowsers()
 {
-	std::vector< std::string > names;
-	for ( auto& browser : m_browsers )
-	{
-		names.push_back( browser.name );
-	}
-	return names;
-}
-
-void core::SystemCleaner::detectInstalledBrowsers()
-{
+	std::vector< std::string > browserNames;
 	const fs::path local = utils::FileSystem::instance().getLocalAppDataDir();
 	const fs::path roaming = utils::FileSystem::instance().getRoamingAppDataDir();
 
-	auto checkBrowser = [ this, &local, &roaming ] ( std::string folder, std::string name, std::string displayName )
+	auto checkBrowser = [ &browserNames, &local, &roaming ] ( std::string folder, std::string name, std::string displayName )
 	{
 		if ( fs::exists( local / folder / name ) || fs::exists( roaming / folder / name ) )
 		{
-			m_browsers.push_back( { std::move( displayName ), {} } );
+			browserNames.push_back( std::move( displayName ) );
 		}
 	};
 
@@ -54,6 +44,8 @@ void core::SystemCleaner::detectInstalledBrowsers()
 	checkBrowser( "Microsoft", "Edge", "Microsoft Edge" );
 	checkBrowser( "Opera Software", "Opera Stable", "Opera" );
 	checkBrowser( "Mozilla", "Firefox", "Mozilla Firefox" );
+
+	return browserNames;
 }
 
 void core::SystemCleaner::clearDir( const std::filesystem::path& pathDir )

@@ -46,6 +46,7 @@ set(GUI_DIR ${CMAKE_SOURCE_DIR}/source/gui)
 set(APP_DIR ${CMAKE_SOURCE_DIR}/source/app)
 set(UTILS_DIR ${CMAKE_SOURCE_DIR}/source/utils)
 set(CORE_DIR ${CMAKE_SOURCE_DIR}/source/core)
+set(SHARED_DIR ${CMAKE_SOURCE_DIR}/source/shared)
 set(WIDGETS_DIR ${GUI_DIR}/widgets)
 
 target_include_directories(SystemCleaner PRIVATE
@@ -78,6 +79,8 @@ target_sources(SystemCleaner PRIVATE
 
 	${UTILS_DIR}/filesystem.cpp
 	${UTILS_DIR}/filesystem.hpp
+
+	${SHARED_DIR}/browser_info.hpp
 )
 
 target_link_libraries(SystemCleaner PRIVATE

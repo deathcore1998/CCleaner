@@ -6,6 +6,7 @@
 
 #include "gui/widgets/widget.hpp"
 
+#include "shared/browser_info.hpp"
 
 namespace core
 {
@@ -22,8 +23,11 @@ namespace gui
 		void draw() override;
 
 	private:
-		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
+		void drawBrowsersPanel();
+		void drawBrowserItem( shared::BrowserInfo& browser );
+		void drawTempCleaningSettings();
 
-		std::vector< std::string > m_browsersList;
+		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
+		std::vector< shared::BrowserInfo > m_browsersInfo;
 	};
 }

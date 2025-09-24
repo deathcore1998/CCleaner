@@ -6,7 +6,11 @@
 gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel")
 {
 	m_systemCleaner = std::make_unique< core::SystemCleaner >();
-	m_browsersList = std::move ( m_systemCleaner->getInstalledBrowsers() );
+
+	for ( std::string& browserName : m_systemCleaner->getInstalledBrowsers() )
+	{
+		m_browsersInfo.push_back( { std::move( browserName ) } );
+	}
 }
 
 void gui::CleanerPanel::draw()
@@ -25,15 +29,48 @@ void gui::CleanerPanel::draw()
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
 		ImGui::Selectable( "Browsers" );
+		ImGui::Selectable( "Temp" );
 
 		ImGui::TableNextColumn();
-		for ( const std::string browser : m_browsersList )
-		{
-			ImGui::Text( browser.c_str() );
-		}
+		drawBrowsersPanel();
 	}
 	ImGui::EndTable();
 
 	ImGui::EndChild();
 	ImGui::PopStyleColor();
+}
+
+void gui::CleanerPanel::drawBrowsersPanel()
+{
+	for ( shared::BrowserInfo& browserInfo : m_browsersInfo )
+	{
+		drawBrowserItem( browserInfo );	
+	}
+}
+
+void gui::CleanerPanel::drawBrowserItem( shared::BrowserInfo& browser )
+{
+	ImGui::PushID( browser.name.c_str() );
+
+	if ( ImGui::CollapsingHeader( browser.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
+	{
+		auto drawCheckBox = []( const char* label, bool& fl )
+		{
+			const float indent = 10.f;
+			ImGui::Indent( indent );
+			ImGui::Checkbox( label, &fl);
+			ImGui::Unindent( indent );
+		};
+
+		drawCheckBox( "Internet Cache", browser.clearCache );
+		drawCheckBox( "Internet History", browser.clearHistory );
+		drawCheckBox( "Cookies", browser.clearCookies );
+		drawCheckBox( "Download History", browser.clearDownloadHistory );
+	}
+	
+	ImGui::PopID();
+}
+
+void gui::CleanerPanel::drawTempCleaningSettings()
+{
 }
