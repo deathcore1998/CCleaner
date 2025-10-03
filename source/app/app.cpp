@@ -19,6 +19,13 @@ void App::run()
 	{
 		glfwPollEvents();
 
+		// skip if window collapsed
+		if ( glfwGetWindowAttrib( m_window, GLFW_ICONIFIED ) )
+		{
+			glfwWaitEvents();
+			continue;
+		}
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();

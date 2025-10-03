@@ -52,8 +52,7 @@ void gui::TitleBar::drawButtons()
 	ImGui::SameLine( viewportSize.x - 40.0f );
 	if ( ImGui::Button( "_" ) )
 	{
-		// fix bug 
-		// glfwIconifyWindow( m_mainWindow );
+		glfwIconifyWindow( m_mainWindow );
 	}
 }
 
