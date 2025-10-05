@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace shared
+namespace common
 {
 	struct BrowserInfo
 	{

@@ -6,7 +6,7 @@
 
 #include "gui/widgets/widget.hpp"
 
-#include "shared/browser_info.hpp"
+#include "common/browser_info.hpp"
 
 namespace core
 {
@@ -24,10 +24,10 @@ namespace gui
 
 	private:
 		void drawBrowsersPanel();
-		void drawBrowserItem( shared::BrowserInfo& browser );
+		void drawBrowserItem( common::BrowserInfo& browser );
 		void drawTempCleaningSettings();
 
 		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
-		std::vector< shared::BrowserInfo > m_browsersInfo;
+		std::vector< common::BrowserInfo > m_browsersInfo;
 	};
 }

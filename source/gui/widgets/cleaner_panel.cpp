@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 #include "core/system_cleaner.hpp"
+#include "common/scoped_guards.hpp"
 
 gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel")
 {
@@ -15,8 +16,7 @@ gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel")
 
 void gui::CleanerPanel::draw()
 {
-	// FIXME need RAII wrappers
-	ImGui::PushStyleColor( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
+	ImGui::StyleGuard styleGuard( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
 	ImGui::BeginChild( "Cleaner panel", ImVec2( 0, 0 ), false );
 
 	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable;
@@ -37,20 +37,19 @@ void gui::CleanerPanel::draw()
 	ImGui::EndTable();
 
 	ImGui::EndChild();
-	ImGui::PopStyleColor();
 }
 
 void gui::CleanerPanel::drawBrowsersPanel()
 {
-	for ( shared::BrowserInfo& browserInfo : m_browsersInfo )
+	for ( common::BrowserInfo& browserInfo : m_browsersInfo )
 	{
 		drawBrowserItem( browserInfo );	
 	}
 }
 
-void gui::CleanerPanel::drawBrowserItem( shared::BrowserInfo& browser )
+void gui::CleanerPanel::drawBrowserItem( common::BrowserInfo& browser )
 {
-	ImGui::PushID( browser.name.c_str() );
+	ImGui::IDGuard( browser.name );
 
 	if ( ImGui::CollapsingHeader( browser.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
 	{
@@ -67,8 +66,6 @@ void gui::CleanerPanel::drawBrowserItem( shared::BrowserInfo& browser )
 		drawCheckBox( "Cookies", browser.clearCookies );
 		drawCheckBox( "Download History", browser.clearDownloadHistory );
 	}
-	
-	ImGui::PopID();
 }
 
 void gui::CleanerPanel::drawTempCleaningSettings()
