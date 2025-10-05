@@ -80,7 +80,7 @@ target_sources(SystemCleaner PRIVATE
 	${UTILS_DIR}/filesystem.cpp
 	${UTILS_DIR}/filesystem.hpp
 
-	${COMMON_DIR}/browser_info.hpp
+	${COMMON_DIR}/cleaner_info.hpp
 	${COMMON_DIR}/scoped_guards.hpp
 )
 

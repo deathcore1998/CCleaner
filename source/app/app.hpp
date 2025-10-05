@@ -8,10 +8,10 @@ class App
 {
 public:
 	App();
+	~App();
 
 	void run();
 
-	~App();
 private:
 	void initWindow();
 	void initGui();

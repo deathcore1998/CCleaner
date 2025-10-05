@@ -11,11 +11,13 @@ namespace gui
 	{
 	public:
 		Gui( GLFWwindow* window );
-		~Gui();
+		~Gui() {};
 
 		void render();
 
 	private:
+		void initStyle();
+
 		GLFWwindow* m_window = nullptr;
 		TitleBar* m_titleBar = nullptr;
 		CleanerPanel* m_cleanerPanel = nullptr;

@@ -16,9 +16,13 @@ namespace utils
 			return fileSystem;
 		}
 
-		fs::path getTempDir();
-		fs::path getLocalAppDataDir();
-		fs::path getRoamingAppDataDir();
+		fs::path getTempDir() const;
+		fs::path getLocalAppDataDir() const;
+		fs::path getRoamingAppDataDir() const;
+
+		fs::path getUpdateCacheDir() const;
+		fs::path getLogsDir() const;
+		fs::path getPrefetchDir() const;
 
 	private:
 		FileSystem(){}

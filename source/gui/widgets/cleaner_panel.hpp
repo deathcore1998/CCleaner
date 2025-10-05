@@ -1,12 +1,12 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <vector>
+
+#include "common/cleaner_info.hpp"
 
 #include "gui/widgets/widget.hpp"
 
-#include "common/browser_info.hpp"
 
 namespace core
 {
@@ -15,6 +15,12 @@ namespace core
 
 namespace gui
 {
+	enum class ActiveContext : size_t
+	{
+		BROWSER,
+		TEMP_AND_SYSTEM
+	};
+
 	class CleanerPanel : public Widget
 	{
 	public:
@@ -23,11 +29,20 @@ namespace gui
 		void draw() override;
 
 	private:
-		void drawBrowsersPanel();
+		void drawOptions();
+		void drawBrowserSettings();
 		void drawBrowserItem( common::BrowserInfo& browser );
-		void drawTempCleaningSettings();
+		void drawTempAndSystemSettings();
+		void drawMain();
+
+		void drawCheckbox( const char* label, bool& fl);
 
 		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
+
 		std::vector< common::BrowserInfo > m_browsersInfo;
+		common::TempInfo m_tempInfo;
+		common::SystemInfo m_systemInfo;
+
+		ActiveContext m_activeContext = ActiveContext::TEMP_AND_SYSTEM;
 	};
 }

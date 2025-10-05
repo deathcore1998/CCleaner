@@ -77,8 +77,6 @@ void App::initGui()
 
 	ImGui_ImplGlfw_InitForOpenGL( m_window, true );
 	ImGui_ImplOpenGL3_Init( "#version 130" );
-
-	ImGui::StyleColorsDark();
 }
 
 void App::cleanUp()

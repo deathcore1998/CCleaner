@@ -4,6 +4,13 @@
 #include <string>
 #include <vector>
 
+namespace common
+{
+	struct BrowserInfo;
+	struct TempInfo;
+	struct SystemInfo;
+}
+
 namespace core
 {
 	class SystemCleaner
@@ -12,8 +19,9 @@ namespace core
 		SystemCleaner();
 		~SystemCleaner(){}
 
-		void cleanTemp();
-		void cleanBrowserCache( const std::string browseName );
+		void cleanBrowserCache( const common::BrowserInfo& browseName );
+		void cleanTemp( const common::TempInfo& tempInfo );
+		void cleanSystem( const common::SystemInfo& tempSystem );
 
 		[[nodiscard]] std::vector< std::string > getInstalledBrowsers();
 	private:

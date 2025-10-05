@@ -3,26 +3,63 @@
 #include <windows.h> // temporary
 #include <fstream>
 
+#include "common/cleaner_info.hpp"
 #include "core/task_manager.hpp"
 #include "utils/filesystem.hpp"
+
 
 core::SystemCleaner::SystemCleaner()
 {
 }
 
-void core::SystemCleaner::cleanTemp()
+void core::SystemCleaner::cleanBrowserCache( const common::BrowserInfo& browseName )
 {
-	TaskManager::instance().addTask( [ this ]()
-	{
-		auto tempDir = utils::FileSystem::instance().getTempDir();
-		clearDir( tempDir );
-	} );
+
+
 }
 
-void core::SystemCleaner::cleanBrowserCache( const std::string browseName )
+void core::SystemCleaner::cleanTemp( const common::TempInfo& tempInfo )
 {
+	if ( tempInfo.cleanTempFiles )
+	{
+		TaskManager::instance().addTask( [ this ] ()
+		{
+			auto tempDir = utils::FileSystem::instance().getTempDir();
+			clearDir( tempDir );
+		} );
+	}
+	if ( tempInfo.cleanUpdateCache )
+	{
+		TaskManager::instance().addTask( [ this ] ()
+		{
 
+		} );
+	}
+	if ( tempInfo.cleanLogs )
+	{
+		TaskManager::instance().addTask( [ this ] ()
+		{
 
+		} );
+	}
+}
+
+void core::SystemCleaner::cleanSystem( const common::SystemInfo& tempSystem )
+{
+	if ( tempSystem.cleanPrefetch )
+	{
+		TaskManager::instance().addTask( [ this ] ()
+		{
+
+		} );
+	}
+	if ( tempSystem.cleanRecycleBin )
+	{		
+		TaskManager::instance().addTask( [ this ] ()
+		{
+			HRESULT hr = SHEmptyRecycleBinA( NULL, NULL, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI );
+		} );
+	}
 }
 
 std::vector< std::string > core::SystemCleaner::getInstalledBrowsers()

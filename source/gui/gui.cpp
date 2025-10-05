@@ -2,16 +2,12 @@
 
 #include <imgui.h>
 
-gui::Gui::Gui( GLFWwindow* window ) :
-    m_window( window )
+gui::Gui::Gui( GLFWwindow* window ) : m_window( window )
 {
     m_titleBar = new TitleBar( m_window );
     m_cleanerPanel = new CleanerPanel();
-}
 
-gui::Gui::~Gui()
-{
-
+    initStyle();
 }
 
 void gui::Gui::render()
@@ -27,4 +23,10 @@ void gui::Gui::render()
     m_cleanerPanel->draw();
 
     ImGui::End();
+}
+
+void gui::Gui::initStyle()
+{
+    ImGui::StyleColorsDark();
+    ImGui::GetStyle().ScrollbarSize = 10.0f;
 }
