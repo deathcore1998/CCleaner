@@ -26,6 +26,7 @@ void gui::CleanerPanel::draw()
 	const ImVec2 tableSize = ImGui::GetContentRegionAvail();
 	ImGui::BeginTable( "CleanerTable", 3, tableFlags, tableSize );
 	{
+		//FIXME no resizeble collumb width
 		ImGui::TableSetupColumn( "Options", ImGuiTableColumnFlags_WidthStretch, 1.0f );
 		ImGui::TableSetupColumn( "Settings", ImGuiTableColumnFlags_WidthStretch, 2.0f );
 		ImGui::TableSetupColumn( "Main", ImGuiTableColumnFlags_WidthStretch, 3.0f );
@@ -34,20 +35,25 @@ void gui::CleanerPanel::draw()
 		ImGui::TableNextColumn();
 		drawOptions();
 
-		ImGui::TableNextColumn();
-		const ImVec2 columnSize = ImGui::GetContentRegionAvail();
-		ImGui::BeginChild( "OptionsColumn", ImVec2( 0, 0 ), false, ImGuiWindowFlags_AlwaysVerticalScrollbar );
 		{
-			if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
+			ImGui::TableNextColumn();
+			const ImVec2 columnSize = ImGui::GetContentRegionAvail();
+			ImGui::BeginChild( "OptionsColumn" );
 			{
-				drawTempAndSystemSettings();
+				if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
+				{
+					drawTempAndSystemSettings();
+				}
+				else if ( m_activeContext == ActiveContext::BROWSER )
+				{
+					drawBrowserSettings();
+				}
 			}
-			else if ( m_activeContext == ActiveContext::BROWSER )
-			{
-				drawBrowserSettings();
-			}
+			ImGui::EndChild();
 		}
-		ImGui::EndChild();
+
+		ImGui::TableNextColumn();
+		drawMain();
 	}
 	ImGui::EndTable();
 
@@ -106,6 +112,39 @@ void gui::CleanerPanel::drawTempAndSystemSettings()
 	{
 		drawCheckbox( "Prefetch", m_systemInfo.cleanPrefetch );
 		drawCheckbox( "Recycle Bin", m_systemInfo.cleanRecycleBin );
+	}
+}
+
+void gui::CleanerPanel::drawMain()
+{
+	const float cursorPosX = ImGui::GetCursorPosX();
+	const ImVec2 contentAvail = ImGui::GetContentRegionAvail();
+	const ImVec2 buttonSize = ImVec2( 100.f, 30.f );
+	const float offset = 10.f;
+	const float buttonPosY = contentAvail.y - buttonSize.y - offset;
+
+	ImGui::Dummy( ImVec2( 0, 30 ) );
+
+	{
+		ImGui::StyleGuard styleGuard( ImGuiCol_Border, IM_COL32( 0, 0, 0, 255 ) );
+		ImGui::BeginChild( "Result cleaning", ImVec2( 0, contentAvail.y - 100 ), true );
+		{
+
+		}
+		ImGui::EndChild();
+	}
+
+	ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
+	if ( ImGui::Button( "Analysis", buttonSize ) )
+	{
+
+	}
+
+	ImGui::SameLine();
+	ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
+	if ( ImGui::Button( "Clear", buttonSize ) )
+	{
+
 	}
 }
 

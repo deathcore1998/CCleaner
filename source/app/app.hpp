@@ -17,6 +17,8 @@ private:
 	void initGui();
 	void cleanUp();
 
+	void centerWindow();
+
 	// FIXME need create a wrapper
 	GLFWwindow* m_window;
 };

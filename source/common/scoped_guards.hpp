@@ -8,7 +8,7 @@ namespace ImGui
 	{
 		StyleGuard( ImGuiCol idx, ImU32 col )
 		{
-			ImGui::PushStyleColor( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
+			ImGui::PushStyleColor( idx, col );
 		}
 
 		~StyleGuard()

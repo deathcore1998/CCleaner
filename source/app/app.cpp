@@ -65,6 +65,8 @@ void App::initWindow()
 		exit( 1 );
 	}
 
+	centerWindow();
+
 	glfwMakeContextCurrent( m_window );
 	glfwSwapInterval( 1 );
 }
@@ -82,4 +84,18 @@ void App::initGui()
 void App::cleanUp()
 {
 
+}
+
+void App::centerWindow()
+{
+	GLFWmonitor* primary = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode( primary );
+
+	int windowWidth;
+	int	windowHeight;
+	glfwGetWindowSize( m_window, &windowWidth, &windowHeight );
+
+	const int posX = ( mode->width - windowWidth ) / 2;
+	const int posY = ( mode->height - windowHeight ) / 2;
+	glfwSetWindowPos( m_window, posX, posY );
 }
