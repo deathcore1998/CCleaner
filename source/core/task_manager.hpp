@@ -16,7 +16,7 @@ namespace core
 		}
 
 		void addTask( std::function< void() > task );
-		void abort();
+		size_t countActiveTasks();
 
 	private:
 		TaskManager();

@@ -9,7 +9,7 @@ void core::TaskManager::addTask( std::function<void()> task )
 	m_treadPool.submit_task( std::move( task ) );
 }
 
-void core::TaskManager::abort()
+size_t core::TaskManager::countActiveTasks()
 {
-
+	return m_treadPool.get_tasks_total();
 }

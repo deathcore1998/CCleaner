@@ -7,13 +7,14 @@
 #include "common/scoped_guards.hpp"
 #include "core/system_cleaner.hpp"
 
-gui::CleanerPanel::CleanerPanel() : Widget( "Cleaner Panel" )
+gui::CleanerPanel::CleanerPanel()
 {
 	m_systemCleaner = std::make_unique< core::SystemCleaner >();
 
-	for ( std::string& browserName : m_systemCleaner->getInstalledBrowsers() )
+	std::vector< std::string > installedBrowsers = m_systemCleaner->getInstalledBrowsers();
+	for ( std::string& browserName : installedBrowsers )
 	{
-		m_browsersInfo.push_back( { std::move( browserName ) } );
+		m_cleanTargets.browsers.push_back( { std::move( browserName ) } );
 	}
 }
 
@@ -75,14 +76,9 @@ void gui::CleanerPanel::drawOptions()
 
 void gui::CleanerPanel::drawBrowserSettings()
 {
-	for ( common::BrowserInfo& browserInfo : m_browsersInfo )
+	for ( common::BrowserInfo& browserInfo : m_cleanTargets.browsers )
 	{
 		drawBrowserItem( browserInfo );	
-	}
-
-	for ( common::BrowserInfo& browserInfo : m_browsersInfo )
-	{
-		drawBrowserItem( browserInfo );
 	}
 }
 
@@ -92,10 +88,10 @@ void gui::CleanerPanel::drawBrowserItem( common::BrowserInfo& browser )
 
 	if ( ImGui::CollapsingHeader( browser.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
 	{
-		drawCheckbox( "Internet Cache", browser.clearCache );
-		drawCheckbox( "Internet History", browser.clearHistory );
-		drawCheckbox( "Cookies", browser.clearCookies );
-		drawCheckbox( "Download History", browser.clearDownloadHistory );
+		std::unordered_map< common::CleanCategory, bool >& cleanOptions = browser.cleanOptions;
+		drawCheckbox( "Internet Cache", cleanOptions[ common::CleanCategory::CACHE ]);
+		drawCheckbox( "Internet History", cleanOptions[ common::CleanCategory::HISTORY ] );
+		drawCheckbox( "Cookies", cleanOptions[ common::CleanCategory::COOKIES ] );
 	}
 }
 
@@ -103,15 +99,17 @@ void gui::CleanerPanel::drawTempAndSystemSettings()
 {
 	if ( ImGui::CollapsingHeader( "Temp", ImGuiTreeNodeFlags_DefaultOpen ) )
 	{
-		drawCheckbox( "Temp Files", m_tempInfo.cleanTempFiles );
-		drawCheckbox( "Update Cache", m_tempInfo.cleanUpdateCache );
-		drawCheckbox( "Logs", m_tempInfo.cleanLogs );
+		std::unordered_map< common::CleanCategory, bool >& cleanOptions = m_cleanTargets.temp.cleanOptions;
+		drawCheckbox( "Temp Files", cleanOptions[ common::CleanCategory::TEMP_FILES ] );
+		drawCheckbox( "Update Cache", cleanOptions[ common::CleanCategory::UPDATE_CACHE ] );
+		drawCheckbox( "Logs", cleanOptions[ common::CleanCategory::LOGS ] );
 	}
 
 	if ( ImGui::CollapsingHeader( "System", ImGuiTreeNodeFlags_DefaultOpen ) )
 	{
-		drawCheckbox( "Prefetch", m_systemInfo.cleanPrefetch );
-		drawCheckbox( "Recycle Bin", m_systemInfo.cleanRecycleBin );
+		std::unordered_map< common::CleanCategory, bool >& cleanOptions = m_cleanTargets.system.cleanOptions;
+		drawCheckbox( "Prefetch", cleanOptions[ common::CleanCategory::PREFETCH ] );
+		drawCheckbox( "Recycle Bin", cleanOptions[ common::CleanCategory::RECYCLE_BIN ] );
 	}
 }
 
@@ -123,28 +121,33 @@ void gui::CleanerPanel::drawMain()
 	const float offset = 10.f;
 	const float buttonPosY = contentAvail.y - buttonSize.y - offset;
 
-	ImGui::Dummy( ImVec2( 0, 30 ) );
-
+	common::CleanerState currentSystemState = m_systemCleaner->getCurrentState();
+	if ( currentSystemState == common::CleanerState::ANALYSIS_DONE ||
+		 currentSystemState == common::CleanerState::CLEANING_DONE )
 	{
-		ImGui::StyleGuard styleGuard( ImGuiCol_Border, IM_COL32( 0, 0, 0, 255 ) );
-		ImGui::BeginChild( "Result cleaning", ImVec2( 0, contentAvail.y - 100 ), true );
-		{
+		m_cleanSummary = m_systemCleaner->getSummary();
+	}
 
-		}
-		ImGui::EndChild();
+	if ( m_cleanSummary.type != common::SummaryType::NONE ||
+		 currentSystemState != common::CleanerState::IDLE )
+	{
+		drawProgress();
+		drawResultCleaningOrAnalysis();
 	}
 
 	ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
 	if ( ImGui::Button( "Analysis", buttonSize ) )
 	{
-
+		m_cleanSummary.reset();
+		m_systemCleaner->analysis( m_cleanTargets );
 	}
 
 	ImGui::SameLine();
 	ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
 	if ( ImGui::Button( "Clear", buttonSize ) )
 	{
-
+		m_cleanSummary.reset();
+		m_systemCleaner->clear( m_cleanTargets );
 	}
 }
 
@@ -154,4 +157,48 @@ void gui::CleanerPanel::drawCheckbox( const char* label, bool& fl )
 	ImGui::Indent( indent );
 	ImGui::Checkbox( label, &fl );
 	ImGui::Unindent( indent );
+}
+
+void gui::CleanerPanel::drawProgress()
+{
+	ImGui::StyleGuard progressStyle( ImGuiCol_PlotHistogram, IM_COL32( 0, 200, 0, 255 ) );
+	const float length = ImGui::GetContentRegionAvail().x;
+	ImGui::ProgressBar( m_systemCleaner->getCurrentProgress(), ImVec2( length, 20.f ) );
+}
+
+void gui::CleanerPanel::drawResultCleaningOrAnalysis()
+{
+	const bool isSummaryAnalysis = m_cleanSummary.type == common::SummaryType::ANALYSIS;
+	ImGui::Text( isSummaryAnalysis ? "Analysis completed" : "Cleaning is complete" );
+	ImGui::SameLine();	
+	ImGui::Text( std::format( "({}s)", m_cleanSummary.totalTime ).c_str() );
+
+	ImGui::TextUnformatted( isSummaryAnalysis ? "Will be cleared approximately:" : "Cleared:" );
+	ImGui::SameLine();
+	ImGui::Text( "%.2f MB", static_cast< float >( m_cleanSummary.totalSize ) / ( 1024.0f * 1024.0f ) );
+
+	ImGui::Spacing();
+	ImGui::Separator();
+
+	const ImVec2 contentAvail = ImGui::GetContentRegionAvail();
+	constexpr ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+	if ( ImGui::BeginTable( "CleanSummaryTable", 4, flags, ImVec2( 0, contentAvail.y - 100 ) ) )
+	{
+		for ( const auto& result : m_cleanSummary.results )
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted( result.propertyName.c_str() );
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted( result.categoryName.c_str() );
+
+			ImGui::TableNextColumn();
+			ImGui::Text( "%.2f", static_cast< float >( result.cleanedSize ) / ( 1024.0f * 1024.0f ) );
+
+			ImGui::TableNextColumn();
+			ImGui::Text( "%llu", static_cast< unsigned long long >( result.cleanedFiles ) );
+		}
+	}
+	ImGui::EndTable();
 }

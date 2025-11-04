@@ -4,17 +4,15 @@
 
 #include <GLFW/glfw3.h>
 
-#include "gui/widgets/widget.hpp"
-
 namespace gui
 {
-	class TitleBar : public Widget
+	class TitleBar
 	{
 	public:
 		TitleBar( GLFWwindow* window );
 		~TitleBar();
 
-		void draw() override;
+		void draw();
 
 	private:
 		void drawButtons();

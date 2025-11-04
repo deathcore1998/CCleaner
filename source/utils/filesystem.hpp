@@ -19,6 +19,7 @@ namespace utils
 		fs::path getTempDir() const;
 		fs::path getLocalAppDataDir() const;
 		fs::path getRoamingAppDataDir() const;
+		fs::path getWindowsDir() const;
 
 		fs::path getUpdateCacheDir() const;
 		fs::path getLogsDir() const;

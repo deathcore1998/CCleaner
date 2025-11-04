@@ -17,17 +17,23 @@ fs::path utils::FileSystem::getRoamingAppDataDir() const
 	return fs::path( localAppData );
 }
 
+fs::path utils::FileSystem::getWindowsDir() const
+{
+	const char* winDir = std::getenv( "WINDIR" );
+	return fs::path( winDir ? winDir : "C:\\Windows" );
+}
+
 fs::path utils::FileSystem::getUpdateCacheDir() const
 {
-	return fs::path();
+	return getWindowsDir() / "SoftwareDistribution" / "Download";
 }
 
 fs::path utils::FileSystem::getLogsDir() const
 {
-	return fs::path();
+	return getWindowsDir() / "Logs";
 }
 
 fs::path utils::FileSystem::getPrefetchDir() const
 {
-	return fs::path();
+	return getWindowsDir() / "Prefetch";
 }

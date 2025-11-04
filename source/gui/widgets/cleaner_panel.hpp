@@ -1,12 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
 #include "common/cleaner_info.hpp"
-
-#include "gui/widgets/widget.hpp"
-
 
 namespace core
 {
@@ -21,12 +17,12 @@ namespace gui
 		TEMP_AND_SYSTEM
 	};
 
-	class CleanerPanel : public Widget
+	class CleanerPanel
 	{
 	public:
 		CleanerPanel();
 
-		void draw() override;
+		void draw();
 
 	private:
 		void drawOptions();
@@ -35,13 +31,14 @@ namespace gui
 		void drawTempAndSystemSettings();
 		void drawMain();
 
-		void drawCheckbox( const char* label, bool& fl);
+		void drawCheckbox( const char* label, bool& fl );
+		void drawProgress();
+		void drawResultCleaningOrAnalysis();
 
 		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
 
-		std::vector< common::BrowserInfo > m_browsersInfo;
-		common::TempInfo m_tempInfo;
-		common::SystemInfo m_systemInfo;
+		common::CleanTargets m_cleanTargets;
+		common::Summary m_cleanSummary;
 
 		ActiveContext m_activeContext = ActiveContext::TEMP_AND_SYSTEM;
 	};

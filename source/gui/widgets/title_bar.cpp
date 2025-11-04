@@ -9,9 +9,7 @@ namespace
 	constexpr float TITLE_HEIGHT = 20.0f;
 }
 
-gui::TitleBar::TitleBar( GLFWwindow* window )
-	: Widget( "TitleBar" )
-	, m_mainWindow( window )
+gui::TitleBar::TitleBar( GLFWwindow* window ) : m_mainWindow( window )
 {
 }
 

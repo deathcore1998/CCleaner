@@ -65,8 +65,6 @@ target_sources(SystemCleaner PRIVATE
 	${APP_DIR}/app.cpp
 	${APP_DIR}/app.hpp
 
-	${WIDGETS_DIR}/widget.cpp
-	${WIDGETS_DIR}/widget.hpp
 	${WIDGETS_DIR}/title_bar.cpp
 	${WIDGETS_DIR}/title_bar.hpp
 	${WIDGETS_DIR}/cleaner_panel.cpp
