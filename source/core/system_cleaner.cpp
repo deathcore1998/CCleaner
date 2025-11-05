@@ -51,17 +51,48 @@ std::vector< std::string > core::SystemCleaner::getInstalledBrowsers()
 
 common::Summary core::SystemCleaner::getSummary()
 {
-	std::scoped_lock lock( m_resultMutex );
+	std::scoped_lock lock( m_summaryMutex );
 	m_currentState = common::CleanerState::IDLE;
 	return m_summary;
 }
 
 void core::SystemCleaner::clear( const common::CleanTargets& cleanTargets )
 {
+	using clock = std::chrono::steady_clock;
+	const auto startTime = clock::now();
+
 	analysisTargets( cleanTargets );
 
-	TaskManager::instance().addTask( [ this ] ()
+	m_cleanedFiles = 0;
+
+	TaskManager::instance().addTask( [ this, startTime, cleanTargets ] ()
 	{
+		// Awaiting analysis
+		while ( TaskManager::instance().countActiveTasks() > 1 )
+		{
+			m_progress = ( float ) TaskManager::instance().countActiveTasks() / ( float ) countAnalysTasks;
+		}
+		
+		// Start cleaning
+		const uint64_t totalFiles = m_summary.totalFiles;
+		if ( totalFiles != 0 )
+		{
+			clearTargets( cleanTargets );
+			while ( TaskManager::instance().countActiveTasks() > 1 )
+			{
+				m_progress = m_cleanedFiles / totalFiles;
+			}
+
+			m_progress = 1.f;
+		}
+
+		const auto endTime = clock::now();
+		const std::chrono::duration< float > elapsed = endTime - startTime;
+
+		m_summary.type = common::SummaryType::CLEANING;
+		m_summary.totalTime = elapsed.count();
+
+		m_currentState = common::CleanerState::CLEANING_DONE;
 	} );
 }
 
@@ -84,9 +115,10 @@ void core::SystemCleaner::analysis( const common::CleanTargets& cleanTargets )
 
 		m_progress = 1.f;
 
-		m_currentState = common::CleanerState::ANALYSIS_DONE;
 		m_summary.type = common::SummaryType::ANALYSIS;
 		m_summary.totalTime = elapsed.count();
+
+		m_currentState = common::CleanerState::ANALYSIS_DONE;
 	} );
 }
 
@@ -157,13 +189,13 @@ void core::SystemCleaner::initializeBrowserData()
 	if ( isBrowserInstalled( YANDEX_BROWSER_PATH ) )
 	{
 		const fs::path base = local / YANDEX_BROWSER_PATH / USER_DATA_DEFAULT;
-		addBrowserInfo( YANDEX_BROWSER_PATH, base );
+		addBrowserInfo( YANDEX_BROWSER, base );
 	}
 
 	if ( isBrowserInstalled( MICROSOFT_EDGE_PATH ) )
 	{
 		const fs::path base = local / MICROSOFT_EDGE_PATH / USER_DATA_DEFAULT;
-		addBrowserInfo( MICROSOFT_EDGE_PATH, base );
+		addBrowserInfo( MICROSOFT_EDGE, base );
 	}
 
 	if ( isBrowserInstalled( OPERA_PATH ) )
@@ -216,6 +248,12 @@ void core::SystemCleaner::analysisTargets( const common::CleanTargets& cleanTarg
 	{
 		analysisSystem( systemInfo );
 	} );
+}
+
+void core::SystemCleaner::clearTargets( const common::CleanTargets& cleanTargets )
+{
+	m_currentState = common::CleanerState::CLEANING;
+	// TODO mb take data from m_summary ?
 }
 
 core::DirInfo core::SystemCleaner::analysisPath( const fs::path& pathDir )
@@ -347,7 +385,7 @@ void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 
 void core::SystemCleaner::accumulateResult( std::string itemName, Category category, const core::DirInfo dirInfo )
 {
-	std::scoped_lock lock( m_resultMutex );
+	std::scoped_lock lock( m_summaryMutex );
 	m_summary.totalFiles += dirInfo.countFile;
 	m_summary.totalSize += dirInfo.dirSize;
 	m_summary.results.push_back( { itemName, convertCategory( category ), dirInfo.countFile, dirInfo.dirSize } );
@@ -446,14 +484,13 @@ std::string core::SystemCleaner::convertCategory( Category cleanCategory )
 void core::SystemCleaner::resetData()
 {
 	{
-		std::lock_guard guard( m_resultMutex );
+		std::lock_guard guard( m_summaryMutex );
 		m_summary.results.clear();
 		m_summary.totalFiles = 0;
 		m_summary.totalSize = 0;
 	}
 
 	m_cleanedFiles = 0;
-	m_cleanedSize = 0;
 
 	countAnalysTasks = 0;
 }

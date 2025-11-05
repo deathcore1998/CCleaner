@@ -44,6 +44,7 @@ namespace core
 		void initializeSystemTempData();
 
 		void analysisTargets( const common::CleanTargets& cleanTargets );
+		void clearTargets( const common::CleanTargets& cleanTargets );
 
 		[[nodiscard]] DirInfo analysisPath( const fs::path& pathDir );
 		void analysisBrowserCache( const common::BrowserInfo& browseInfo );
@@ -61,11 +62,10 @@ namespace core
 		void resetData();
 
 		std::atomic< uint64_t > m_cleanedFiles { 0 };
-		std::atomic< uint64_t > m_cleanedSize { 0 };
 		std::atomic< float > m_progress { 0.f };
 		std::atomic< size_t > countAnalysTasks { 0 };
 
-		std::mutex m_resultMutex;
+		std::mutex m_summaryMutex;
 		common::Summary m_summary;
 
 		CleanMap m_browsersCleanMap;

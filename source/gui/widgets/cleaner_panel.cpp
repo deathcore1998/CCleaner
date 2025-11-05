@@ -121,33 +121,36 @@ void gui::CleanerPanel::drawMain()
 	const float offset = 10.f;
 	const float buttonPosY = contentAvail.y - buttonSize.y - offset;
 
-	common::CleanerState currentSystemState = m_systemCleaner->getCurrentState();
+	const common::CleanerState currentSystemState = m_systemCleaner->getCurrentState();
+	const bool isSystemNotIdle = currentSystemState != common::CleanerState::IDLE;
 	if ( currentSystemState == common::CleanerState::ANALYSIS_DONE ||
 		 currentSystemState == common::CleanerState::CLEANING_DONE )
 	{
 		m_cleanSummary = m_systemCleaner->getSummary();
 	}
 
-	if ( m_cleanSummary.type != common::SummaryType::NONE ||
-		 currentSystemState != common::CleanerState::IDLE )
+	if ( m_cleanSummary.type != common::SummaryType::NONE || isSystemNotIdle )
 	{
 		drawProgress();
 		drawResultCleaningOrAnalysis();
 	}
 
-	ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
-	if ( ImGui::Button( "Analysis", buttonSize ) )
 	{
-		m_cleanSummary.reset();
-		m_systemCleaner->analysis( m_cleanTargets );
-	}
+		ImGui::DisabledGuard disabledGuard( isSystemNotIdle );
+		ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
+		if ( ImGui::Button( "Analysis", buttonSize ) )
+		{
+			m_cleanSummary.reset();
+			m_systemCleaner->analysis( m_cleanTargets );
+		}
 
-	ImGui::SameLine();
-	ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
-	if ( ImGui::Button( "Clear", buttonSize ) )
-	{
-		m_cleanSummary.reset();
-		m_systemCleaner->clear( m_cleanTargets );
+		ImGui::SameLine();
+		ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
+		if ( ImGui::Button( "Clear", buttonSize ) )
+		{
+			m_cleanSummary.reset();
+			m_systemCleaner->clear( m_cleanTargets );
+		}
 	}
 }
 

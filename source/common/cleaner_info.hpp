@@ -42,10 +42,12 @@ namespace common
 
 		bool isNeedClean() const noexcept
 		{
-			for ( const auto& [category, enabled] : cleanOptions )
+			for ( const auto& [ category, enabled ] : cleanOptions )
 			{
 				if ( enabled )
+				{
 					return true;
+				}	
 			}
 			return false;
 		}

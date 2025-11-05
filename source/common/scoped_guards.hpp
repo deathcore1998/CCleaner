@@ -29,4 +29,17 @@ namespace ImGui
 			ImGui::PopID();
 		}
 	};
+
+	struct DisabledGuard
+	{
+		DisabledGuard( bool disable )
+		{
+			ImGui::BeginDisabled( disable );
+		}
+
+		~DisabledGuard()
+		{
+			ImGui::EndDisabled();
+		}
+	};
 }
