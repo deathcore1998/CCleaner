@@ -24,8 +24,10 @@ namespace
 
 	constexpr std::string_view USER_DATA_DEFAULT = "User Data\\Default";
 
-	constexpr const char* TEMP = "Temp";
-	constexpr const char* SYSTEM = "System";
+	constexpr char TEMP[] = "Temp";
+	constexpr char SYSTEM[] = "System";
+
+	constexpr float EPS = 0.001f;
 }
 
 core::SystemCleaner::SystemCleaner()
@@ -112,11 +114,12 @@ void core::SystemCleaner::analysis( const common::CleanTargets& cleanTargets )
 
 		const auto endTime = clock::now();
 		const std::chrono::duration< float > elapsed = endTime - startTime;
+		const float duration = elapsed.count();
 
 		m_progress = 1.f;
 
 		m_summary.type = common::SummaryType::ANALYSIS;
-		m_summary.totalTime = elapsed.count();
+		m_summary.totalTime = duration < EPS ? 0.0f : duration;
 
 		m_currentState = common::CleanerState::ANALYSIS_DONE;
 	} );
@@ -235,19 +238,25 @@ void core::SystemCleaner::analysisTargets( const common::CleanTargets& cleanTarg
 		} );
 	}
 
-	++countAnalysTasks;
 	const common::TempInfo& tempInfo = cleanTargets.temp;
-	TaskManager::instance().addTask( [ this, tempInfo ] ()
+	if ( m_tempSystemCleanMap.contains( tempInfo.name ) )
 	{
-		analysisTemp( tempInfo );
-	} );
-
-	++countAnalysTasks;
+		++countAnalysTasks;
+		TaskManager::instance().addTask( [ this, tempInfo ] ()
+		{
+			analysisTemp( tempInfo );
+		} );
+	}
+	
 	const common::SystemInfo& systemInfo = cleanTargets.system;
-	TaskManager::instance().addTask( [ this, systemInfo ] ()
+	if ( m_tempSystemCleanMap.contains( systemInfo.name ) )
 	{
-		analysisSystem( systemInfo );
-	} );
+		++countAnalysTasks;
+		TaskManager::instance().addTask( [ this, systemInfo ] ()
+		{
+			analysisSystem( systemInfo );
+		} );
+	}
 }
 
 void core::SystemCleaner::clearTargets( const common::CleanTargets& cleanTargets )
@@ -314,11 +323,6 @@ void core::SystemCleaner::analysisBrowserCache( const common::BrowserInfo& brows
 void core::SystemCleaner::analysisTemp( const common::TempInfo& tempInfo )
 {
 	const auto it = m_tempSystemCleanMap.find( tempInfo.name );
-	if ( it == m_tempSystemCleanMap.end() )
-	{
-		return;
-	}
-
 	for ( const auto& [ category, enabled ] : tempInfo.cleanOptions )
 	{
 		if ( !enabled )
@@ -341,11 +345,6 @@ void core::SystemCleaner::analysisTemp( const common::TempInfo& tempInfo )
 void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 {
 	const auto it = m_tempSystemCleanMap.find( systemInfo.name );
-	if ( it == m_tempSystemCleanMap.end() )
-	{
-		return;
-	}
-
 	for ( const auto& [ category, enabled ] : systemInfo.cleanOptions )
 	{
 		if ( !enabled )
