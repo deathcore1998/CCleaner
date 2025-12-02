@@ -21,56 +21,58 @@ gui::CleanerPanel::CleanerPanel()
 void gui::CleanerPanel::draw()
 {
 	ImGui::StyleGuard styleGuard( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
-	ImGui::BeginChild( "Cleaner panel", ImVec2( 0, 0 ), false );
+	ImGui::BeginChild( "Cleaner panel" );
 
-	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_Resizable;
+	drawOptions();
+
+	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_SizingFixedFit;
 	const ImVec2 tableSize = ImGui::GetContentRegionAvail();
-	ImGui::BeginTable( "CleanerTable", 3, tableFlags, tableSize );
+
+	if ( auto table = ImGui::Table( "CleanerTable", 2, tableFlags, tableSize ) )
 	{
-		//FIXME no resizeble collumb width
-		ImGui::TableSetupColumn( "Options", ImGuiTableColumnFlags_WidthStretch, 1.0f );
-		ImGui::TableSetupColumn( "Settings", ImGuiTableColumnFlags_WidthStretch, 2.0f );
-		ImGui::TableSetupColumn( "Main", ImGuiTableColumnFlags_WidthStretch, 3.0f );
+		constexpr ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_WidthFixed;
+		ImGui::TableSetupColumn( "Settings", columnFlags, tableSize.x * 0.25f );
+		ImGui::TableSetupColumn( "Main", columnFlags, tableSize.x * 0.75f );
 
-		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		drawOptions();
-
+		const ImVec2 columnSize = ImGui::GetContentRegionAvail();
+		ImGui::BeginChild( "OptionsColumn" );
 		{
-			ImGui::TableNextColumn();
-			const ImVec2 columnSize = ImGui::GetContentRegionAvail();
-			ImGui::BeginChild( "OptionsColumn" );
+			if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
 			{
-				if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
-				{
-					drawTempAndSystemSettings();
-				}
-				else if ( m_activeContext == ActiveContext::BROWSER )
-				{
-					drawBrowserSettings();
-				}
+				drawTempAndSystemSettings();
 			}
-			ImGui::EndChild();
+			else if ( m_activeContext == ActiveContext::BROWSER )
+			{
+				drawBrowserSettings();
+			}
 		}
+		ImGui::EndChild();
 
 		ImGui::TableNextColumn();
 		drawMain();
 	}
-	ImGui::EndTable();
 
 	ImGui::EndChild();
 }
 
 void gui::CleanerPanel::drawOptions()
 {
-	if ( ImGui::Selectable( "Temp/System", m_activeContext == ActiveContext::TEMP_AND_SYSTEM ) )
+	if ( ImGui::BeginTabBar( "CleanerTabs" ) )
 	{
-		m_activeContext = ActiveContext::TEMP_AND_SYSTEM;
-	}
+		if ( ImGui::BeginTabItem( "Temp/System" ) )
+		{
+			m_activeContext = ActiveContext::TEMP_AND_SYSTEM;
+			ImGui::EndTabItem();
+		}
 
-	if ( ImGui::Selectable( "Browsers", m_activeContext == ActiveContext::BROWSER ) )
-	{
-		m_activeContext = ActiveContext::BROWSER;
+		if ( ImGui::BeginTabItem( "Browsers" ) )
+		{
+			m_activeContext = ActiveContext::BROWSER;
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
 	}
 }
 
@@ -78,20 +80,14 @@ void gui::CleanerPanel::drawBrowserSettings()
 {
 	for ( common::BrowserInfo& browserInfo : m_cleanTargets.browsers )
 	{
-		drawBrowserItem( browserInfo );	
-	}
-}
-
-void gui::CleanerPanel::drawBrowserItem( common::BrowserInfo& browser )
-{
-	ImGui::IDGuard guard( browser.name );
-
-	if ( ImGui::CollapsingHeader( browser.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
-	{
-		std::unordered_map< common::CleanCategory, bool >& cleanOptions = browser.cleanOptions;
-		drawCheckbox( "Internet Cache", cleanOptions[ common::CleanCategory::CACHE ]);
-		drawCheckbox( "Internet History", cleanOptions[ common::CleanCategory::HISTORY ] );
-		drawCheckbox( "Cookies", cleanOptions[ common::CleanCategory::COOKIES ] );
+		ImGui::IDGuard guard( browserInfo.name );
+		if ( ImGui::CollapsingHeader( browserInfo.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
+		{
+			std::unordered_map< common::CleanCategory, bool >& cleanOptions = browserInfo.cleanOptions;
+			drawCheckbox( "Internet Cache", cleanOptions[ common::CleanCategory::CACHE ] );
+			drawCheckbox( "Internet History", cleanOptions[ common::CleanCategory::HISTORY ] );
+			drawCheckbox( "Cookies", cleanOptions[ common::CleanCategory::COOKIES ] );
+		}
 	}
 }
 
@@ -185,7 +181,8 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 
 	const ImVec2 contentAvail = ImGui::GetContentRegionAvail();
 	constexpr ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
-	if ( ImGui::BeginTable( "CleanSummaryTable", 4, flags, ImVec2( 0, contentAvail.y - 100 ) ) )
+
+	if ( auto table = ImGui::Table( "CleanSummaryTable", 4, flags, ImVec2( 0, contentAvail.y - 100 ) ) )
 	{
 		for ( const auto& result : m_cleanSummary.results )
 		{
@@ -203,5 +200,4 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 			ImGui::Text( "%llu", static_cast< unsigned long long >( result.cleanedFiles ) );
 		}
 	}
-	ImGui::EndTable();
 }

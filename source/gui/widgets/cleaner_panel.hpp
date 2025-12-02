@@ -27,7 +27,6 @@ namespace gui
 	private:
 		void drawOptions();
 		void drawBrowserSettings();
-		void drawBrowserItem( common::BrowserInfo& browser );
 		void drawTempAndSystemSettings();
 		void drawMain();
 
