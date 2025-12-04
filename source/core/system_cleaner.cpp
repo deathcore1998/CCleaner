@@ -387,7 +387,7 @@ void core::SystemCleaner::accumulateResult( std::string itemName, Category categ
 	std::scoped_lock lock( m_summaryMutex );
 	m_summary.totalFiles += dirInfo.countFile;
 	m_summary.totalSize += dirInfo.dirSize;
-	m_summary.results.push_back( { itemName, convertCategory( category ), dirInfo.countFile, dirInfo.dirSize } );
+	m_summary.results.insert( { itemName, convertCategory( category ), dirInfo.countFile, dirInfo.dirSize } );
 }
 
 void core::SystemCleaner::clearDir( const fs::path& pathDir )

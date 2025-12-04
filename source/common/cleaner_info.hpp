@@ -1,8 +1,10 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <filesystem>
 #include <unordered_map>
+#include <vector>
 
 namespace common
 {
@@ -102,6 +104,11 @@ namespace common
 		uint64_t cleanedFiles = 0;
 		uint64_t cleanedSize = 0;
 		// std::string icon;
+
+		bool operator<( const CleanResult& other) const
+		{
+			return this->propertyName < other.propertyName;
+		}
 	};
 
 	struct Summary
@@ -112,7 +119,7 @@ namespace common
 		uint64_t totalFiles = 0;
 		uint64_t totalSize = 0;
 
-		std::vector< CleanResult > results;
+		std::multiset< CleanResult > results;
 
 		void reset()
 		{
