@@ -1,6 +1,5 @@
 #pragma once
 
-#include <set>
 #include <string>
 #include <filesystem>
 #include <unordered_map>
@@ -36,6 +35,8 @@ namespace common
 		CLEANING,
 	};
 
+	using CleanOptionsMap = std::unordered_map< CleanCategory, bool >;
+
 	struct BaseInfo
 	{
 		BaseInfo( std::string name ) : name ( std::move( name ) )
@@ -55,13 +56,13 @@ namespace common
 		}
 
 		std::string name;
-		// std::string icon;
-		std::unordered_map< CleanCategory, bool > cleanOptions;
+		uint64_t textureID = 0;
+		CleanOptionsMap cleanOptions;
 	};
 
 	struct BrowserInfo : public BaseInfo
 	{
-		BrowserInfo( std::string name ) : BaseInfo( std::move( name ) )
+		BrowserInfo( std::string name, uint64_t textureID = 0 ) : BaseInfo( std::move( name ) )
 		{
 			cleanOptions =
 			{
@@ -103,12 +104,7 @@ namespace common
 		std::string categoryName;
 		uint64_t cleanedFiles = 0;
 		uint64_t cleanedSize = 0;
-		// std::string icon;
-
-		bool operator<( const CleanResult& other) const
-		{
-			return this->propertyName < other.propertyName;
-		}
+		uint64_t textureID = 0;
 	};
 
 	struct Summary
@@ -119,7 +115,7 @@ namespace common
 		uint64_t totalFiles = 0;
 		uint64_t totalSize = 0;
 
-		std::multiset< CleanResult > results;
+		std::vector< CleanResult > results;
 
 		void reset()
 		{

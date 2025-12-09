@@ -1,5 +1,12 @@
 #include "filesystem.hpp"
 
+fs::path utils::FileSystem::getProjectSourceDir() const
+{
+#ifdef PROJECT_SOURCE_DIR
+	return fs::path( PROJECT_SOURCE_DIR ).lexically_normal();
+#endif
+}
+
 fs::path utils::FileSystem::getTempDir() const
 {
 	return fs::temp_directory_path();

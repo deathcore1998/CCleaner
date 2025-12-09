@@ -16,6 +16,8 @@ namespace utils
 			return fileSystem;
 		}
 
+		fs::path getProjectSourceDir() const;
+
 		fs::path getTempDir() const;
 		fs::path getLocalAppDataDir() const;
 		fs::path getRoamingAppDataDir() const;

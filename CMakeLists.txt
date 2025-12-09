@@ -27,6 +27,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(bs_thread_pool)
 
+FetchContent_Declare(
+	stb
+	GIT_REPOSITORY https://github.com/nothings/stb.git
+	GIT_TAG master
+)
+FetchContent_MakeAvailable(stb)
+
 add_executable(SystemCleaner WIN32
 	source/main.cpp
 	${imgui_SOURCE_DIR}/imgui.cpp
@@ -56,6 +63,8 @@ target_include_directories(SystemCleaner PRIVATE
 	${CMAKE_SOURCE_DIR}/source
 
 	${bs_thread_pool_SOURCE_DIR}/include
+
+	${stb_SOURCE_DIR}
 )
 
 target_sources(SystemCleaner PRIVATE
@@ -70,19 +79,27 @@ target_sources(SystemCleaner PRIVATE
 	${WIDGETS_DIR}/cleaner_panel.cpp
 	${WIDGETS_DIR}/cleaner_panel.hpp
 
-	${CORE_DIR}/task_manager.cpp
-	${CORE_DIR}/task_manager.hpp
 	${CORE_DIR}/system_cleaner.cpp
 	${CORE_DIR}/system_cleaner.hpp
+	${CORE_DIR}/task_manager.cpp
+	${CORE_DIR}/task_manager.hpp
+	${CORE_DIR}/texture_manager.cpp
+	${CORE_DIR}/texture_manager.hpp
 
 	${UTILS_DIR}/filesystem.cpp
 	${UTILS_DIR}/filesystem.hpp
 
 	${COMMON_DIR}/cleaner_info.hpp
+	${COMMON_DIR}/constants.hpp
 	${COMMON_DIR}/scoped_guards.hpp
 )
 
 target_link_libraries(SystemCleaner PRIVATE
 	glfw
 	opengl32
+)
+
+target_compile_definitions(SystemCleaner PRIVATE
+	PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	PROJECT_VERSION="1.0"
 )

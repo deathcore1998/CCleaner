@@ -3,30 +3,13 @@
 #include <windows.h>
 
 #include "common/cleaner_info.hpp"
+#include "common/constants.hpp"
 #include "core/task_manager.hpp"
 #include "utils/filesystem.hpp"
 
 
 namespace
 {
-	// take out in constants file 
-	constexpr std::string_view GOOGLE_CHORM = "Google Chrome";
-	constexpr std::string_view MOZILLA_FIREFOX = "Mozilla Firefox";
-	constexpr std::string_view YANDEX_BROWSER = "YandexBrowser";
-	constexpr std::string_view MICROSOFT_EDGE = "Microsoft Edge";
-	constexpr std::string_view OPERA = "Opera";
-
-	constexpr std::string_view GOOGLE_CHORM_PATH = "Google\\Chrome";
-	constexpr std::string_view MOZILLA_FIREFOX_PATH = "Mozilla\\Firefox";
-	constexpr std::string_view YANDEX_BROWSER_PATH = "Yandex\\YandexBrowser";
-	constexpr std::string_view MICROSOFT_EDGE_PATH = "Microsoft\\Edge";
-	constexpr std::string_view OPERA_PATH = "Opera Software\\Opera Stable";
-
-	constexpr std::string_view USER_DATA_DEFAULT = "User Data\\Default";
-
-	constexpr char TEMP[] = "Temp";
-	constexpr char SYSTEM[] = "System";
-
 	constexpr float EPS = 0.001f;
 }
 
@@ -165,15 +148,15 @@ void core::SystemCleaner::initializeBrowserData()
 		addGroup( browserName, Category::HISTORY, basePath / historyPath );
 	};
 
-	if ( isBrowserInstalled( GOOGLE_CHORM_PATH ) )
+	if ( isBrowserInstalled( common::GOOGLE_CHROME_PATH ) )
 	{
-		const fs::path base = local / GOOGLE_CHORM_PATH / USER_DATA_DEFAULT;
-		addBrowserInfo( GOOGLE_CHORM, base );
+		const fs::path base = local / common::GOOGLE_CHROME_PATH / common::USER_DATA_DEFAULT;
+		addBrowserInfo( common::GOOGLE_CHROME, base );
 	}
 
-	if ( isBrowserInstalled( MOZILLA_FIREFOX_PATH ) )
+	if ( isBrowserInstalled( common::MOZILLA_FIREFOX_PATH ) )
 	{
-		const fs::path profilesRoot = roaming / MOZILLA_FIREFOX_PATH / "Profiles";
+		const fs::path profilesRoot = roaming / common::MOZILLA_FIREFOX_PATH / "Profiles";
 		if ( fs::exists( profilesRoot ) )
 		{
 			for ( auto& entry : fs::directory_iterator( profilesRoot ) )
@@ -184,27 +167,27 @@ void core::SystemCleaner::initializeBrowserData()
 				}
 
 				const fs::path profilePath = entry.path();
-				addBrowserInfo( MOZILLA_FIREFOX, profilePath, "cache2\\entries", "cookies.sqlite", "places.sqlite" );
+				addBrowserInfo( common::MOZILLA_FIREFOX, profilePath, "cache2\\entries", "cookies.sqlite", "places.sqlite" );
 			}
 		}
 	}
 
-	if ( isBrowserInstalled( YANDEX_BROWSER_PATH ) )
+	if ( isBrowserInstalled( common::YANDEX_BROWSER_PATH ) )
 	{
-		const fs::path base = local / YANDEX_BROWSER_PATH / USER_DATA_DEFAULT;
-		addBrowserInfo( YANDEX_BROWSER, base );
+		const fs::path base = local / common::YANDEX_BROWSER_PATH / common::USER_DATA_DEFAULT;
+		addBrowserInfo( common::YANDEX_BROWSER, base );
 	}
 
-	if ( isBrowserInstalled( MICROSOFT_EDGE_PATH ) )
+	if ( isBrowserInstalled( common::MICROSOFT_EDGE_PATH ) )
 	{
-		const fs::path base = local / MICROSOFT_EDGE_PATH / USER_DATA_DEFAULT;
-		addBrowserInfo( MICROSOFT_EDGE, base );
+		const fs::path base = local / common::MICROSOFT_EDGE_PATH / common::USER_DATA_DEFAULT;
+		addBrowserInfo( common::MICROSOFT_EDGE, base );
 	}
 
-	if ( isBrowserInstalled( OPERA_PATH ) )
+	if ( isBrowserInstalled( common::OPERA_PATH ) )
 	{
-		const fs::path base = roaming / OPERA_PATH;
-		addBrowserInfo( OPERA, base );
+		const fs::path base = roaming / common::OPERA_PATH;
+		addBrowserInfo( common::OPERA, base );
 	}
 }
 
@@ -212,11 +195,11 @@ void core::SystemCleaner::initializeSystemTempData()
 {
 	auto& fs = utils::FileSystem::instance();
 
-	m_tempSystemCleanMap[ TEMP ].insert( { Category::TEMP_FILES, fs.getTempDir() } );
-	m_tempSystemCleanMap[ TEMP ].insert( { Category::UPDATE_CACHE, fs.getUpdateCacheDir() });
-	m_tempSystemCleanMap[ TEMP ].insert( { Category::LOGS, fs.getLogsDir() } );
+	m_tempSystemCleanMap[ common::TEMP ].insert( { Category::TEMP_FILES, fs.getTempDir() } );
+	m_tempSystemCleanMap[ common::TEMP ].insert( { Category::UPDATE_CACHE, fs.getUpdateCacheDir() });
+	m_tempSystemCleanMap[ common::TEMP ].insert( { Category::LOGS, fs.getLogsDir() } );
 
-	m_tempSystemCleanMap[ SYSTEM ].insert( { Category::PREFETCH, fs.getPrefetchDir() } );
+	m_tempSystemCleanMap[ common::SYSTEM ].insert( { Category::PREFETCH, fs.getPrefetchDir() } );
 }
 
 void core::SystemCleaner::analysisTargets( const common::CleanTargets& cleanTargets )
@@ -366,7 +349,7 @@ void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 				dirInfo.dirSize = static_cast< uint64_t >( rbInfo.i64Size );
 			}
 
-			accumulateResult( SYSTEM, category, dirInfo );
+			accumulateResult( common::SYSTEM, category, dirInfo );
 			continue;
 		}
 
@@ -387,7 +370,7 @@ void core::SystemCleaner::accumulateResult( std::string itemName, Category categ
 	std::scoped_lock lock( m_summaryMutex );
 	m_summary.totalFiles += dirInfo.countFile;
 	m_summary.totalSize += dirInfo.dirSize;
-	m_summary.results.insert( { itemName, convertCategory( category ), dirInfo.countFile, dirInfo.dirSize } );
+	m_summary.results.push_back( { itemName, convertCategory( category ), dirInfo.countFile, dirInfo.dirSize } );
 }
 
 void core::SystemCleaner::clearDir( const fs::path& pathDir )
