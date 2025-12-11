@@ -43,6 +43,21 @@ namespace ImGui
 		}
 	};
 
+	struct IndentGuard
+	{
+		IndentGuard( float indent ) : m_indent( indent )
+		{
+			ImGui::Indent( m_indent );
+		}
+
+		~IndentGuard()
+		{
+			ImGui::Unindent( m_indent );
+		}
+	private:
+		float m_indent;
+	};
+
 	class Table
 	{
 	public:

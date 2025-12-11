@@ -10,6 +10,8 @@
 namespace
 {
 	constexpr float ICON_SIZE = 16.f;
+	constexpr float KILOBYTE = 1024.0f;
+	constexpr float MEGABYTE = KILOBYTE * KILOBYTE;
 }
 
 gui::CleanerPanel::CleanerPanel()
@@ -138,32 +140,28 @@ void gui::CleanerPanel::drawMain()
 		drawProgress();
 		drawResultCleaningOrAnalysis();
 	}
-
+	
+	ImGui::DisabledGuard disabledGuard( isSystemNotIdle );
+	ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
+	if ( ImGui::Button( "Analysis", buttonSize ) )
 	{
-		ImGui::DisabledGuard disabledGuard( isSystemNotIdle );
-		ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
-		if ( ImGui::Button( "Analysis", buttonSize ) )
-		{
-			m_cleanSummary.reset();
-			m_systemCleaner->analysis( m_cleanTargets );
-		}
-
-		ImGui::SameLine();
-		ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
-		if ( ImGui::Button( "Clear", buttonSize ) )
-		{
-			m_cleanSummary.reset();
-			m_systemCleaner->clear( m_cleanTargets );
-		}
+		m_cleanSummary.reset();
+		m_systemCleaner->analysis( m_cleanTargets );
 	}
+
+	ImGui::SameLine();
+	ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
+	if ( ImGui::Button( "Clear", buttonSize ) )
+	{
+		m_cleanSummary.reset();
+		m_systemCleaner->clear( m_cleanTargets );
+	}	
 }
 
 void gui::CleanerPanel::drawCheckbox( const char* label, bool& fl )
 {
-	const float indent = 10.f;
-	ImGui::Indent( indent );
+	ImGui::IndentGuard indent( 10.f );
 	ImGui::Checkbox( label, &fl );
-	ImGui::Unindent( indent );
 }
 
 void gui::CleanerPanel::drawProgress()
@@ -175,43 +173,50 @@ void gui::CleanerPanel::drawProgress()
 
 void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 {
-	const bool isSummaryAnalysis = m_cleanSummary.type == common::SummaryType::ANALYSIS;
-	ImGui::Text( isSummaryAnalysis ? "Analysis completed" : "Cleaning is complete" );
-	ImGui::SameLine();	
-	ImGui::Text( std::format( "({}s)", m_cleanSummary.totalTime ).c_str() );
+	{
+		const bool isSummaryAnalysis = m_cleanSummary.type == common::SummaryType::ANALYSIS;
 
-	ImGui::TextUnformatted( isSummaryAnalysis ? "Will be cleared approximately:" : "Cleared:" );
-	ImGui::SameLine();
-	ImGui::Text( "%.2f MB", static_cast< float >( m_cleanSummary.totalSize ) / ( 1024.0f * 1024.0f ) );
+		ImGui::IndentGuard indent( 10.f );
+		ImGui::Text( isSummaryAnalysis ? "Analysis completed" : "Cleaning is complete" );
+		ImGui::SameLine();
+		ImGui::Text( "(%.3fs)", m_cleanSummary.totalTime );
+
+		ImGui::Text( isSummaryAnalysis ? "Will be cleared approximately:" : "Cleared:" );
+		ImGui::SameLine();
+		ImGui::Text( "%.2f MB", static_cast< float >( m_cleanSummary.totalSize ) / MEGABYTE );
+	}
 
 	ImGui::Spacing();
 	ImGui::Separator();
 
 	const ImVec2 contentAvail = ImGui::GetContentRegionAvail();
-	constexpr ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+	constexpr ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
+	const int columnsCount = 3;
 
-	if ( auto table = ImGui::Table( "CleanSummaryTable", 4, flags, ImVec2( 0, contentAvail.y - 100 ) ) )
+	if ( auto table = ImGui::Table( "CleanSummaryTable", columnsCount, flags, ImVec2( 0, contentAvail.y - 100 ) ) )
 	{
+		constexpr ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_WidthFixed;
+		ImGui::TableSetupColumn( "##name", columnFlags, contentAvail.x * 0.5 );
+		ImGui::TableSetupColumn( "##cleanedSize", columnFlags, contentAvail.x * 0.25 );
+		ImGui::TableSetupColumn( "##cleanedFiles", columnFlags, contentAvail.x * 0.25 );
+
 		for ( const auto& result : m_cleanSummary.results )
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
-
+			
 			if ( result.textureID != ImTextureID_Invalid )
 			{
 				ImGui::Image( result.textureID, ImVec2( ICON_SIZE, ICON_SIZE ) );
 				ImGui::SameLine();
 			}
-			ImGui::TextUnformatted( result.propertyName.c_str() );
+			ImGui::Text( "%s - %s", result.propertyName.c_str(), result.categoryName.c_str() );
 
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted( result.categoryName.c_str() );
+			ImGui::Text( "%.2f", static_cast< float >( result.cleanedSize ) / KILOBYTE );
 
 			ImGui::TableNextColumn();
-			ImGui::Text( "%.2f", static_cast< float >( result.cleanedSize ) / ( 1024.0f * 1024.0f ) );
-
-			ImGui::TableNextColumn();
-			ImGui::Text( "%llu", static_cast< unsigned long long >( result.cleanedFiles ) );
+			ImGui::Text( "%llu", static_cast< uint64_t >( result.cleanedFiles ) );
 		}
 	}
 }
