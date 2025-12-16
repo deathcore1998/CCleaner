@@ -285,9 +285,9 @@ void core::SystemCleaner::analysisBrowserCache( const common::BrowserInfo& brows
 	}
 
 	const CleanGroup& cleanGroup = it->second;
-	for ( const auto& [ category, enabled ] : browseInfo.cleanOptions )
+	for ( const auto& [ category, cleanOption ] : browseInfo.cleanOptions )
 	{
-		if ( !enabled )
+		if ( !cleanOption.enabled )
 		{
 			continue;
 		}	
@@ -299,16 +299,16 @@ void core::SystemCleaner::analysisBrowserCache( const common::BrowserInfo& brows
 		}		
 
 		const core::DirInfo dirInfo = analysisPath( group->second );
-		accumulateResult( browseInfo.name, category, dirInfo );
+		accumulateResult( browseInfo.name, cleanOption.displayName, dirInfo );
 	}
 }
 
 void core::SystemCleaner::analysisTemp( const common::TempInfo& tempInfo )
 {
 	const auto it = m_tempSystemCleanMap.find( tempInfo.name );
-	for ( const auto& [ category, enabled ] : tempInfo.cleanOptions )
+	for ( const auto& [ category, cleanOption ] : tempInfo.cleanOptions )
 	{
-		if ( !enabled )
+		if ( !cleanOption.enabled )
 		{
 			continue;
 		}
@@ -321,16 +321,16 @@ void core::SystemCleaner::analysisTemp( const common::TempInfo& tempInfo )
 		}
 
 		const core::DirInfo dirInfo = analysisPath( group->second );
-		accumulateResult( tempInfo.name, category, dirInfo );
+		accumulateResult( tempInfo.name, cleanOption.displayName, dirInfo );
 	}
 }
 
 void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 {
 	const auto it = m_tempSystemCleanMap.find( systemInfo.name );
-	for ( const auto& [ category, enabled ] : systemInfo.cleanOptions )
+	for ( const auto& [ category, cleanOption] : systemInfo.cleanOptions )
 	{
-		if ( !enabled )
+		if ( !cleanOption.enabled )
 		{
 			continue;
 		}
@@ -349,7 +349,7 @@ void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 				dirInfo.dirSize = static_cast< uint64_t >( rbInfo.i64Size );
 			}
 
-			accumulateResult( common::SYSTEM, category, dirInfo );
+			accumulateResult( common::SYSTEM, cleanOption.displayName, dirInfo );
 			continue;
 		}
 
@@ -361,16 +361,16 @@ void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 		}
 
 		const core::DirInfo dirInfo = analysisPath( group->second );
-		accumulateResult( systemInfo.name, category, dirInfo );
+		accumulateResult( systemInfo.name, cleanOption.displayName, dirInfo );
 	}
 }
 
-void core::SystemCleaner::accumulateResult( std::string itemName, Category category, const core::DirInfo dirInfo )
+void core::SystemCleaner::accumulateResult( std::string itemName, std::string category, const core::DirInfo dirInfo )
 {
 	std::scoped_lock lock( m_summaryMutex );
 	m_summary.totalFiles += dirInfo.countFile;
 	m_summary.totalSize += dirInfo.dirSize;
-	m_summary.results.push_back( { itemName, convertCategory( category ), dirInfo.countFile, dirInfo.dirSize } );
+	m_summary.results.push_back( { std::move( itemName ), std::move( category ), dirInfo.countFile, dirInfo.dirSize } );
 }
 
 void core::SystemCleaner::clearDir( const fs::path& pathDir )
@@ -437,30 +437,6 @@ void core::SystemCleaner::cleanSystem( const common::SystemInfo& systemInfo )
 			HRESULT hr = SHEmptyRecycleBinA( NULL, NULL, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI );
 		} );
 	}*/
-}
-
-std::string core::SystemCleaner::convertCategory( Category cleanCategory )
-{
-	switch ( cleanCategory )
-	{
-		case Category::CACHE:
-			return "Cache";
-		case Category::COOKIES:
-			return "Cookies";
-		case Category::HISTORY:
-			return "History";
-		case Category::TEMP_FILES:
-			return "Temp files";
-		case Category::UPDATE_CACHE:
-			return "Update cache";
-		case Category::LOGS:
-			return "Logs";
-		case Category::PREFETCH:
-			return "Prefetch";
-		case Category::RECYCLE_BIN:
-			return "Recycle bin";
-	}
-	return std::string();
 }
 
 void core::SystemCleaner::resetData()

@@ -26,12 +26,11 @@ namespace gui
 		void draw();
 
 	private:
-		void drawOptions();
-		void drawBrowserSettings();
-		void drawTempAndSystemSettings();
+		void drawTabBar();
 		void drawMain();
 
-		void drawCheckbox( const char* label, bool& fl );
+		void drawOptions();
+		void drawOption( const std::string& optionsName, common::CleanOptionsMap& cleanOptions );
 		void drawProgress();
 		void drawResultCleaningOrAnalysis();
 

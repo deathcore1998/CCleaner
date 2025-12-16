@@ -1,9 +1,12 @@
 #include "cleaner_panel.hpp"
 
+#include <cmath>
+#include <ranges>
 #include <string>
 
 #include <imgui.h>
 
+#include "common/constants.hpp"
 #include "common/scoped_guards.hpp"
 #include "core/system_cleaner.hpp"
 
@@ -33,7 +36,7 @@ void gui::CleanerPanel::draw()
 	ImGui::StyleGuard styleGuard( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
 	ImGui::BeginChild( "Cleaner panel" );
 
-	drawOptions();
+	drawTabBar();
 
 	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_SizingFixedFit;
 	const ImVec2 tableSize = ImGui::GetContentRegionAvail();
@@ -48,14 +51,7 @@ void gui::CleanerPanel::draw()
 		const ImVec2 columnSize = ImGui::GetContentRegionAvail();
 		ImGui::BeginChild( "OptionsColumn" );
 		{
-			if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
-			{
-				drawTempAndSystemSettings();
-			}
-			else if ( m_activeContext == ActiveContext::BROWSER )
-			{
-				drawBrowserSettings();
-			}
+			drawOptions();
 		}
 		ImGui::EndChild();
 
@@ -66,7 +62,7 @@ void gui::CleanerPanel::draw()
 	ImGui::EndChild();
 }
 
-void gui::CleanerPanel::drawOptions()
+void gui::CleanerPanel::drawTabBar()
 {
 	if ( ImGui::BeginTabBar( "CleanerTabs" ) )
 	{
@@ -83,39 +79,6 @@ void gui::CleanerPanel::drawOptions()
 		}
 
 		ImGui::EndTabBar();
-	}
-}
-
-void gui::CleanerPanel::drawBrowserSettings()
-{
-	for ( common::BrowserInfo& browserInfo : m_cleanTargets.browsers )
-	{
-		ImGui::IDGuard guard( browserInfo.name );
-		if ( ImGui::CollapsingHeader( browserInfo.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen ) )
-		{
-			common::CleanOptionsMap& cleanOptions = browserInfo.cleanOptions;
-			drawCheckbox( "Internet Cache", cleanOptions[ common::CleanCategory::CACHE ] );
-			drawCheckbox( "Internet History", cleanOptions[ common::CleanCategory::HISTORY ] );
-			drawCheckbox( "Cookies", cleanOptions[ common::CleanCategory::COOKIES ] );
-		}
-	}
-}
-
-void gui::CleanerPanel::drawTempAndSystemSettings()
-{
-	if ( ImGui::CollapsingHeader( "Temp", ImGuiTreeNodeFlags_DefaultOpen ) )
-	{
-		common::CleanOptionsMap& cleanOptions = m_cleanTargets.temp.cleanOptions;
-		drawCheckbox( "Temp Files", cleanOptions[ common::CleanCategory::TEMP_FILES ] );
-		drawCheckbox( "Update Cache", cleanOptions[ common::CleanCategory::UPDATE_CACHE ] );
-		drawCheckbox( "Logs", cleanOptions[ common::CleanCategory::LOGS ] );
-	}
-
-	if ( ImGui::CollapsingHeader( "System", ImGuiTreeNodeFlags_DefaultOpen ) )
-	{
-		common::CleanOptionsMap& cleanOptions = m_cleanTargets.system.cleanOptions;
-		drawCheckbox( "Prefetch", cleanOptions[ common::CleanCategory::PREFETCH ] );
-		drawCheckbox( "Recycle Bin", cleanOptions[ common::CleanCategory::RECYCLE_BIN ] );
 	}
 }
 
@@ -158,10 +121,41 @@ void gui::CleanerPanel::drawMain()
 	}	
 }
 
-void gui::CleanerPanel::drawCheckbox( const char* label, bool& fl )
+void gui::CleanerPanel::drawOptions()
 {
-	ImGui::IndentGuard indent( 10.f );
-	ImGui::Checkbox( label, &fl );
+	if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
+	{
+		common::TempInfo& tempInfo = m_cleanTargets.temp;
+		drawOption( tempInfo.name, tempInfo.cleanOptions );
+
+		common::SystemInfo& systemInfo = m_cleanTargets.system;
+		drawOption( systemInfo.name, systemInfo.cleanOptions );
+	}
+	else if ( m_activeContext == ActiveContext::BROWSER )
+	{
+		for ( common::BrowserInfo& browserInfo : m_cleanTargets.browsers )
+		{
+			drawOption( browserInfo.name, browserInfo.cleanOptions );
+		}
+	}
+}
+
+void gui::CleanerPanel::drawOption( const std::string& optionsName, common::CleanOptionsMap& cleanOptions )
+{
+	ImGui::IDGuard guard( optionsName );
+	ImGui::Image( m_textureManager.getTexture( optionsName ), ImVec2( ICON_SIZE, ICON_SIZE ) );	
+	const float checkboxOffset = ImGui::GetCursorPosX();
+
+	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::Text( common::TEMP );
+	{
+		ImGui::IndentGuard indent( checkboxOffset );
+		for ( common::CleanOption& cleanOption : cleanOptions | std::views::values )
+		{
+			ImGui::Checkbox( cleanOption.displayName.c_str(), &cleanOption.enabled );
+		}
+	}
 }
 
 void gui::CleanerPanel::drawProgress()
@@ -213,7 +207,7 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 			ImGui::Text( "%s - %s", result.propertyName.c_str(), result.categoryName.c_str() );
 
 			ImGui::TableNextColumn();
-			ImGui::Text( "%.2f", static_cast< float >( result.cleanedSize ) / KILOBYTE );
+			ImGui::Text( "%.0f", std::ceil( result.cleanedSize / KILOBYTE ) );
 
 			ImGui::TableNextColumn();
 			ImGui::Text( "%llu", static_cast< uint64_t >( result.cleanedFiles ) );
@@ -228,7 +222,7 @@ void gui::CleanerPanel::prepareResultsForDisplay()
 	// sort results
 	std::vector< common::CleanResult >& results = m_cleanSummary.results;
 	std::sort( results.begin(), results.end(),
-		[] ( const common::CleanResult& r1, const common::CleanResult& r2 )
+	[] ( const common::CleanResult& r1, const common::CleanResult& r2 )
 	{
 		return r1.propertyName < r2.propertyName;
 	} );

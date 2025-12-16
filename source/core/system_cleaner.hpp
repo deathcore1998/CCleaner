@@ -50,14 +50,12 @@ namespace core
 		void analysisBrowserCache( const common::BrowserInfo& browseInfo );
 		void analysisTemp( const common::TempInfo& tempInfo );
 		void analysisSystem( const common::SystemInfo& systemInfo );
-		void accumulateResult( std::string itemName, Category category, const core::DirInfo dirInfo );
+		void accumulateResult( std::string itemName, std::string category, const core::DirInfo dirInfo );
 
 		void clearDir( const fs::path& pathDir );
 		void cleanBrowserCache( const common::BrowserInfo& browseInfo );
 		void cleanTemp( const common::TempInfo& tempInfo );
 		void cleanSystem( const common::SystemInfo& systemInfo );
-
-		std::string convertCategory( Category cleanCategory );
 
 		void resetData();
 

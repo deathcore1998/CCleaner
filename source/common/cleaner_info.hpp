@@ -1,9 +1,12 @@
 #pragma once
 
-#include <string>
 #include <filesystem>
+#include <ranges>
+#include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "common/constants.hpp"
 
 namespace common
 {
@@ -35,7 +38,13 @@ namespace common
 		CLEANING,
 	};
 
-	using CleanOptionsMap = std::unordered_map< CleanCategory, bool >;
+	struct CleanOption
+	{
+		bool enabled = true;
+		std::string displayName;
+	};
+
+	using CleanOptionsMap = std::unordered_map< CleanCategory, CleanOption >;
 
 	struct BaseInfo
 	{
@@ -45,7 +54,7 @@ namespace common
 
 		bool isNeedClean() const noexcept
 		{
-			for ( const auto& [ category, enabled ] : cleanOptions )
+			for ( const auto& [ enabled, displayName ] : cleanOptions | std::views::values )
 			{
 				if ( enabled )
 				{
@@ -66,34 +75,34 @@ namespace common
 		{
 			cleanOptions =
 			{
-				{ CleanCategory::CACHE, true },
-				{ CleanCategory::COOKIES, true },
-				{ CleanCategory::HISTORY, true },
+				{ CleanCategory::CACHE, { true, "Cache" } },
+				{ CleanCategory::COOKIES, { true, "Cookies" } },
+				{ CleanCategory::HISTORY, { true, "History" } },
 			};
 		}
 	};
 
 	struct TempInfo : public BaseInfo
 	{
-		TempInfo() : BaseInfo( "Temp" )
+		TempInfo() : BaseInfo( common::TEMP )
 		{
 			cleanOptions =
 			{
-				{ CleanCategory::TEMP_FILES, true },
-				{ CleanCategory::UPDATE_CACHE, true },
-				{ CleanCategory::LOGS, true },
+				{ CleanCategory::TEMP_FILES, { true, "Temp files" } },
+				{ CleanCategory::UPDATE_CACHE, { true, "Update cache" } },
+				{ CleanCategory::LOGS, { true, "Logs" } },
 			};
 		}
 	};
 
 	struct SystemInfo : public BaseInfo
 	{
-		SystemInfo() : BaseInfo( "System" )
+		SystemInfo() : BaseInfo( common::SYSTEM )
 		{
 			cleanOptions =
 			{
-				{ CleanCategory::PREFETCH, true },
-				{ CleanCategory::RECYCLE_BIN, true },
+				{ CleanCategory::PREFETCH, { true, "Prefetch" } },
+				{ CleanCategory::RECYCLE_BIN, { true, "Recycle bin" } },
 			};
 		}
 	};
