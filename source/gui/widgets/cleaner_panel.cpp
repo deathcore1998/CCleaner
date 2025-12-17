@@ -15,6 +15,24 @@ namespace
 	constexpr float ICON_SIZE = 16.f;
 	constexpr float KILOBYTE = 1024.0f;
 	constexpr float MEGABYTE = KILOBYTE * KILOBYTE;
+
+	std::string separateString( const std::string& str )
+	{
+		std::string result = str;
+		for ( int i = result.size() - 3; i > 0; i -= 3 )
+		{
+			result.insert( i, " " );
+		}
+		return result;
+	}
+
+	void rightAlignedText( const std::string& text )
+	{
+		const float regionAvail = ImGui::GetContentRegionAvail().x;
+		const float textSize = ImGui::CalcTextSize( text.c_str() ).x;
+		ImGui::SetCursorPosX( ImGui::GetCursorPosX() + regionAvail - textSize );
+		ImGui::Text( text.c_str() );
+	}
 }
 
 gui::CleanerPanel::CleanerPanel()
@@ -191,8 +209,8 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 	{
 		constexpr ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_WidthFixed;
 		ImGui::TableSetupColumn( "##name", columnFlags, contentAvail.x * 0.5 );
-		ImGui::TableSetupColumn( "##cleanedSize", columnFlags, contentAvail.x * 0.25 );
-		ImGui::TableSetupColumn( "##cleanedFiles", columnFlags, contentAvail.x * 0.25 );
+		ImGui::TableSetupColumn( "##cleanedSize", columnFlags, contentAvail.x * 0.30 );
+		ImGui::TableSetupColumn( "##cleanedFiles", columnFlags, contentAvail.x * 0.20 );
 
 		for ( const auto& result : m_cleanSummary.results )
 		{
@@ -207,10 +225,12 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 			ImGui::Text( "%s - %s", result.propertyName.c_str(), result.categoryName.c_str() );
 
 			ImGui::TableNextColumn();
-			ImGui::Text( "%.0f", std::ceil( result.cleanedSize / KILOBYTE ) );
+			const std::string cleanedSize = std::to_string( static_cast< int >( std::ceil( result.cleanedSize / KILOBYTE ) ) );
+			rightAlignedText( separateString( cleanedSize ) + " KB" );
 
 			ImGui::TableNextColumn();
-			ImGui::Text( "%llu", static_cast< uint64_t >( result.cleanedFiles ) );
+			const std::string cleanedFiles = separateString( std::to_string( result.cleanedFiles ) );
+			rightAlignedText( cleanedFiles );
 		}
 	}
 }
