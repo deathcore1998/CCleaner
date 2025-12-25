@@ -16,6 +16,6 @@ namespace core
         void clear();
 
     private:
-        std::unordered_map< std::string, unsigned int > textures;
+        std::unordered_map< std::string, unsigned int > m_textures;
     };
 }

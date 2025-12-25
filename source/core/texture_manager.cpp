@@ -6,86 +6,83 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "common/constants.hpp"
 #include "utils/filesystem.hpp"
 
 
 core::TextureManager::TextureManager()
 {
-    loadAllIcons();
+	loadAllIcons();
 }
 
 core::TextureManager::~TextureManager()
 {
-    clear();
+	clear();
 }
 
 void core::TextureManager::loadAllIcons()
 {
-    struct
-    {
-        std::string_view name;
-        std::string_view path;
-    } icons[] =
-    {
-        { common::GOOGLE_CHROME, "chrome.png" },
-        { common::MICROSOFT_EDGE, "edge.png" },
-        { common::MOZILLA_FIREFOX, "firefox.png" },
-        { common::OPERA, "opera.png" },
-        { common::YANDEX_BROWSER, "yandex.png" },
+	const utils::FileSystem& fs = utils::FileSystem::instance();
+	const fs::path iconsDir = fs.getProjectSourceDir() / "icons";
 
-        { common::TEMP, "temp.png"},
-        { common::SYSTEM, "system.png"},
-    };
+	if ( !fs::exists( iconsDir ) || !fs::is_directory( iconsDir ) )
+	{
+		return;
+	}
 
+	for ( const auto& icon : fs::directory_iterator( iconsDir ) )
+	{
+		const fs::path iconPath = icon.path();
+		if ( !icon.is_regular_file() || iconPath.extension() != ".png" )
+		{
+			continue;
+		}
 
-    const utils::FileSystem& fs = utils::FileSystem::instance();
-    const fs::path iconsDir = fs.getProjectSourceDir() / "icons";
+		const std::string filename = iconPath.stem().string();
+		if ( m_textures.contains( filename ) )
+		{
+			continue;
+		}
 
-    for ( const auto& icon : icons )
-    {
-        int width = 0;
-        int height = 0;
-        int channels = 0;
+		int width = 0;
+		int height = 0;
+		int channels = 0;
+		unsigned char* data = stbi_load( iconPath.string().c_str(), &width, &height, &channels, 4 );
 
-        const fs::path iconPath = iconsDir / icon.path;
-        unsigned char* data = stbi_load( iconPath.string().c_str(), &width, &height, &channels, 4);
+		if ( !data )
+		{
+			continue;
+		}
 
-        if ( !data )
-        {
-            continue;
-        }
+		GLuint textureID;
+		glGenTextures( 1, &textureID );
+		glBindTexture( GL_TEXTURE_2D, textureID );
 
-        GLuint textureID;
-        glGenTextures( 1, &textureID );
-        glBindTexture( GL_TEXTURE_2D, textureID );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
 
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
+		stbi_image_free( data );
 
-        stbi_image_free( data );
-
-        textures[ icon.name.data() ] = textureID;
-    }
+		m_textures[ iconPath.stem().string() ] = textureID;
+	}
 }
 
 unsigned int core::TextureManager::getTexture( const std::string& name )
 {
-    auto it = textures.find( name );
-    if ( it == textures.end() )
-    {
-        return 0;
-    }
-    return it->second;
+	auto it = m_textures.find( name );
+	if ( it == m_textures.end() )
+	{
+		return 0;
+	}
+	return it->second;
 }
 
 void core::TextureManager::clear()
 {
-    for ( auto& pair : textures )
-    {
-        glDeleteTextures( 1, &pair.second );
-    }
-    textures.clear();
+	for ( auto& pair : m_textures )
+	{
+		glDeleteTextures( 1, &pair.second );
+	}
+	m_textures.clear();
 }
