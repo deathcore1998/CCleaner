@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <GLFW/glfw3.h>
+#include "core/window.hpp"
 
 class App
 {
@@ -13,12 +13,8 @@ public:
 	void run();
 
 private:
-	void initWindow();
 	void initGui();
-	void cleanUp();
+	void finiGui();
 
-	void centerWindow();
-
-	// FIXME need create a wrapper
-	GLFWwindow* m_window;
+	core::Window m_window;
 };

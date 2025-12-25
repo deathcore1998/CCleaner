@@ -85,6 +85,8 @@ target_sources(SystemCleaner PRIVATE
 	${CORE_DIR}/task_manager.hpp
 	${CORE_DIR}/texture_manager.cpp
 	${CORE_DIR}/texture_manager.hpp
+	${CORE_DIR}/window.cpp
+	${CORE_DIR}/window.hpp
 
 	${UTILS_DIR}/filesystem.cpp
 	${UTILS_DIR}/filesystem.hpp

@@ -5,21 +5,25 @@
 #include "widgets/cleaner_panel.hpp"
 #include "widgets/title_bar.hpp"
 
+namespace core
+{
+	class Window;
+}
+
 namespace gui
 {
 	class Gui
 	{
 	public:
-		Gui( GLFWwindow* window );
-		~Gui() {};
+		Gui( core::Window& window );
 
 		void render();
 
 	private:
 		void initStyle();
 
-		GLFWwindow* m_window = nullptr;
-		TitleBar* m_titleBar = nullptr;
-		CleanerPanel* m_cleanerPanel = nullptr;
+		core::Window& m_window;
+		TitleBar m_titleBar;
+		CleanerPanel m_cleanerPanel;
 	};
 }

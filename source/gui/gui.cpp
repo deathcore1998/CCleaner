@@ -2,11 +2,11 @@
 
 #include <imgui.h>
 
-gui::Gui::Gui( GLFWwindow* window ) : m_window( window )
-{
-    m_titleBar = new TitleBar( m_window );
-    m_cleanerPanel = new CleanerPanel();
+#include "core/window.hpp"
 
+gui::Gui::Gui( core::Window& window ) : 
+    m_window( window ), m_titleBar ( window )
+{
     initStyle();
 }
 
@@ -19,8 +19,8 @@ void gui::Gui::render()
 
     ImGui::Begin( "MainWindow", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings );
 
-    m_titleBar->draw();
-    m_cleanerPanel->draw();
+    m_titleBar.draw();
+    m_cleanerPanel.draw();
 
     ImGui::End();
 }

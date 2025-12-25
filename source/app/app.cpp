@@ -5,22 +5,32 @@
 
 #include "gui/gui.hpp"
 
-App::App()
+namespace
 {
-	initWindow();
+	constexpr int HEIGHT = 800;
+	constexpr int WIDTH = 600;
+}
+
+App::App() : m_window( HEIGHT, WIDTH )
+{
 	initGui();
+}
+
+App::~App()
+{
+	finiGui();
 }
 
 void App::run()
 {
 	gui::Gui gui( m_window );
 
-	while ( !glfwWindowShouldClose( m_window ) )
+	while ( !m_window.shouldClose() )
 	{
 		glfwPollEvents();
 
 		// skip if window collapsed
-		if ( glfwGetWindowAttrib( m_window, GLFW_ICONIFIED ) )
+		if ( m_window.getWindowAttrib() )
 		{
 			glfwWaitEvents();
 			continue;
@@ -38,37 +48,8 @@ void App::run()
 		glClear( GL_COLOR_BUFFER_BIT );
 		ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
-		glfwSwapBuffers( m_window );
+		m_window.swapBuffers();
 	}
-}
-
-App::~App()
-{
-	cleanUp();
-}
-
-void App::initWindow()
-{
-	if ( !glfwInit() )
-	{
-		exit( 1 );
-	}
-
-	// disable up border
-	glfwWindowHint( GLFW_DECORATED, GLFW_FALSE );
-	
-	// create glfw window
-	m_window = glfwCreateWindow( 800, 600, "", NULL, NULL );
-	if ( !m_window )
-	{
-		glfwTerminate();
-		exit( 1 );
-	}
-
-	centerWindow();
-
-	glfwMakeContextCurrent( m_window );
-	glfwSwapInterval( 1 );
 }
 
 void App::initGui()
@@ -77,25 +58,14 @@ void App::initGui()
 	ImGui::CreateContext();
 	ImGui::GetIO();
 
-	ImGui_ImplGlfw_InitForOpenGL( m_window, true );
+	ImGui_ImplGlfw_InitForOpenGL( m_window.getGlfwHandle(), true );
 	ImGui_ImplOpenGL3_Init( "#version 130" );
 }
 
-void App::cleanUp()
+void App::finiGui()
 {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
 
-}
-
-void App::centerWindow()
-{
-	GLFWmonitor* primary = glfwGetPrimaryMonitor();
-	const GLFWvidmode* mode = glfwGetVideoMode( primary );
-
-	int windowWidth;
-	int	windowHeight;
-	glfwGetWindowSize( m_window, &windowWidth, &windowHeight );
-
-	const int posX = ( mode->width - windowWidth ) / 2;
-	const int posY = ( mode->height - windowHeight ) / 2;
-	glfwSetWindowPos( m_window, posX, posY );
+	ImGui::DestroyContext();
 }

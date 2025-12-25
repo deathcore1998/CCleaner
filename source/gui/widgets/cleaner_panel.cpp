@@ -8,7 +8,6 @@
 
 #include "common/constants.hpp"
 #include "common/scoped_guards.hpp"
-#include "core/system_cleaner.hpp"
 
 namespace
 {

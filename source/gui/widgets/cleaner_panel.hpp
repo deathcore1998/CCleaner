@@ -3,12 +3,8 @@
 #include <memory>
 
 #include "common/cleaner_info.hpp"
+#include "core/system_cleaner.hpp"
 #include "core/texture_manager.hpp"
-
-namespace core
-{
-	class SystemCleaner;
-}
 
 namespace gui
 {
