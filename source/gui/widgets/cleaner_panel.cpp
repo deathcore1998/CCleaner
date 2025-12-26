@@ -15,6 +15,8 @@ namespace
 	constexpr float KILOBYTE = 1024.0f;
 	constexpr float MEGABYTE = KILOBYTE * KILOBYTE;
 
+	constexpr ImU32 GREEN_COLOR = IM_COL32( 0, 200, 0, 255 );
+
 	std::string separateString( const std::string& str )
 	{
 		std::string result = str;
@@ -165,7 +167,7 @@ void gui::CleanerPanel::drawOption( const std::string& optionsName, common::Clea
 
 	ImGui::SameLine();
 	ImGui::AlignTextToFramePadding();
-	ImGui::Text( common::TEMP );
+	ImGui::Text( optionsName.c_str() );
 	{
 		ImGui::IndentGuard indent( checkboxOffset );
 		for ( common::CleanOption& cleanOption : cleanOptions | std::views::values )
@@ -177,7 +179,7 @@ void gui::CleanerPanel::drawOption( const std::string& optionsName, common::Clea
 
 void gui::CleanerPanel::drawProgress()
 {
-	ImGui::StyleGuard progressStyle( ImGuiCol_PlotHistogram, IM_COL32( 0, 200, 0, 255 ) );
+	ImGui::StyleGuard progressStyle( ImGuiCol_PlotHistogram, GREEN_COLOR );
 	const float length = ImGui::GetContentRegionAvail().x;
 	ImGui::ProgressBar( m_systemCleaner->getCurrentProgress(), ImVec2( length, 20.f ) );
 }

@@ -207,68 +207,44 @@ void core::SystemCleaner::analysisTargets( const common::CleanTargets& cleanTarg
 	resetData();
 	m_currentState = common::CleanerState::ANALYZING;
 
-	for ( const common::BrowserInfo& browser : cleanTargets.browsers )
-	{
-		if ( !browser.isNeedClean() )
-		{
-			continue;
-		}
-		++countAnalysTasks;
-
-		TaskManager::instance().addTask( [ this, browser ] ()
-		{
-			analysisBrowserCache( browser );
-		} );
-	}
-
-	const common::TempInfo& tempInfo = cleanTargets.temp;
-	if ( m_tempSystemCleanMap.contains( tempInfo.name ) )
-	{
-		++countAnalysTasks;
-		TaskManager::instance().addTask( [ this, tempInfo ] ()
-		{
-			analysisTemp( tempInfo );
-		} );
-	}
-	
-	const common::SystemInfo& systemInfo = cleanTargets.system;
-	if ( m_tempSystemCleanMap.contains( systemInfo.name ) )
-	{
-		++countAnalysTasks;
-		TaskManager::instance().addTask( [ this, systemInfo ] ()
-		{
-			analysisSystem( systemInfo );
-		} );
-	}
+	analysisBrowsersInfo( cleanTargets.browsers );
+	analysisTemporaryData( cleanTargets.temp );
+	analysisSystemComponents( cleanTargets.system );
 }
 
-void core::SystemCleaner::clearTargets( const common::CleanTargets& cleanTargets )
-{
-	m_currentState = common::CleanerState::CLEANING;
-	// TODO mb take data from m_summary ?
-}
-
-core::DirInfo core::SystemCleaner::analysisPath( const fs::path& pathDir )
+core::DirInfo core::SystemCleaner::processPath( const fs::path& pathDir, bool deleteFiles )
 {
 	core::DirInfo info {};
+
+	auto processFile = [ &info, deleteFiles ] ( const fs::path& filePath, uint64_t fileSize )
+	{
+		try
+		{
+			bool shouldCount = !deleteFiles || fs::remove( filePath );
+			if ( shouldCount )
+			{
+				++info.countFile;
+				info.dirSize += fileSize;
+			}
+		}
+		catch ( const fs::filesystem_error& ) {}
+	};
+
 	try
 	{
 		if ( fs::is_directory( pathDir ) )
 		{
-			for ( const auto& entry : fs::recursive_directory_iterator(
-				pathDir, fs::directory_options::skip_permission_denied ) )
+			for ( const auto& entry : fs::recursive_directory_iterator( pathDir, fs::directory_options::skip_permission_denied ) )
 			{
 				if ( entry.is_regular_file() )
 				{
-					++info.countFile;
-					info.dirSize += entry.file_size();
+					processFile( entry.path(), entry.file_size() );
 				}
 			}
 		}
 		else if ( fs::is_regular_file( pathDir ) )
 		{
-			info.countFile = 1;
-			info.dirSize = fs::file_size( pathDir );
+			processFile( pathDir, fs::file_size( pathDir ) );
 		}
 	}
 	catch ( const fs::filesystem_error& ) {}
@@ -276,59 +252,61 @@ core::DirInfo core::SystemCleaner::analysisPath( const fs::path& pathDir )
 	return info;
 }
 
-void core::SystemCleaner::analysisBrowserCache( const common::BrowserInfo& browseInfo )
+void core::SystemCleaner::analysisBrowsersInfo( const std::vector< common::BrowserInfo >& browsers )
 {
-	const auto it = m_browsersCleanMap.find( browseInfo.name );
-	if ( it == m_browsersCleanMap.end() )
+	for ( const common::BrowserInfo& browserInfo : browsers )
+	{
+		if ( !browserInfo.isNeedClean() )
+		{
+			continue;
+		}
+		++countAnalysTasks;
+
+		TaskManager::instance().addTask( [ this, browserInfo ] ()
+		{
+			const auto it = m_browsersCleanMap.find( browserInfo.name );
+			const CleanGroup& cleanGroup = it->second;
+			analysisOptions( browserInfo.cleanOptions, cleanGroup, browserInfo.name );
+		} );
+	}
+}
+
+void core::SystemCleaner::analysisTemporaryData( const common::TempInfo& tempInfo )
+{
+	if ( !tempInfo.isNeedClean() )
 	{
 		return;
 	}
 
-	const CleanGroup& cleanGroup = it->second;
-	for ( const auto& [ category, cleanOption ] : browseInfo.cleanOptions )
+	++countAnalysTasks;
+
+	TaskManager::instance().addTask( [ this, tempInfo ] ()
 	{
-		if ( !cleanOption.enabled )
-		{
-			continue;
-		}	
-
-		auto group = cleanGroup.find( category );
-		if ( group == cleanGroup.end() )
-		{
-			continue;
-		}		
-
-		const core::DirInfo dirInfo = analysisPath( group->second );
-		accumulateResult( browseInfo.name, cleanOption.displayName, dirInfo );
-	}
-}
-
-void core::SystemCleaner::analysisTemp( const common::TempInfo& tempInfo )
-{
-	const auto it = m_tempSystemCleanMap.find( tempInfo.name );
-	for ( const auto& [ category, cleanOption ] : tempInfo.cleanOptions )
-	{
-		if ( !cleanOption.enabled )
-		{
-			continue;
-		}
-
+		const auto it = m_tempSystemCleanMap.find( tempInfo.name );
 		const CleanGroup& cleanGroup = it->second;
-		auto group = cleanGroup.find( category );
-		if ( group == cleanGroup.end() )
-		{
-			continue;
-		}
-
-		const core::DirInfo dirInfo = analysisPath( group->second );
-		accumulateResult( tempInfo.name, cleanOption.displayName, dirInfo );
-	}
+		analysisOptions( tempInfo.cleanOptions, cleanGroup, tempInfo.name );
+	} );
 }
 
-void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
+void core::SystemCleaner::analysisSystemComponents( const common::SystemInfo& systemInfo )
 {
-	const auto it = m_tempSystemCleanMap.find( systemInfo.name );
-	for ( const auto& [ category, cleanOption] : systemInfo.cleanOptions )
+	if ( !systemInfo.isNeedClean() )
+	{
+		return;
+	}
+	++countAnalysTasks;
+
+	TaskManager::instance().addTask( [ this, systemInfo ] ()
+	{
+		const auto it = m_tempSystemCleanMap.find( systemInfo.name );
+		const CleanGroup& cleanGroup = it->second;
+		analysisOptions( systemInfo.cleanOptions, cleanGroup, systemInfo.name );
+	} );
+}
+
+void core::SystemCleaner::analysisOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName )
+{
+	for ( const auto& [ category, cleanOption ] : cleanOptions )
 	{
 		if ( !cleanOption.enabled )
 		{
@@ -353,15 +331,14 @@ void core::SystemCleaner::analysisSystem( const common::SystemInfo& systemInfo )
 			continue;
 		}
 
-		const CleanGroup& cleanGroup = it->second;
 		auto group = cleanGroup.find( category );
 		if ( group == cleanGroup.end() )
 		{
 			continue;
 		}
 
-		const core::DirInfo dirInfo = analysisPath( group->second );
-		accumulateResult( systemInfo.name, cleanOption.displayName, dirInfo );
+		const core::DirInfo dirInfo = processPath( group->second );
+		accumulateResult( optionsName, cleanOption.displayName, dirInfo );
 	}
 }
 
@@ -373,70 +350,99 @@ void core::SystemCleaner::accumulateResult( std::string itemName, std::string ca
 	m_summary.results.push_back( { std::move( itemName ), std::move( category ), dirInfo.countFile, dirInfo.dirSize } );
 }
 
-void core::SystemCleaner::clearDir( const fs::path& pathDir )
+void core::SystemCleaner::clearTargets( const common::CleanTargets& cleanTargets )
 {
-	for ( const auto& entry : fs::recursive_directory_iterator( pathDir ) )
-	{
-		try
-		{
+	resetData();
+	m_currentState = common::CleanerState::CLEANING;
 
-		}
-		catch ( const std::exception& e )
+	cleanBrowsersInfo( cleanTargets.browsers );
+	cleanTemporaryData( cleanTargets.temp );
+	cleanSystemComponents( cleanTargets.system );
+}
+
+void core::SystemCleaner::cleanBrowsersInfo( const std::vector< common::BrowserInfo >& browsers )
+{
+	for ( const common::BrowserInfo& browserInfo : browsers )
+	{
+		if ( !browserInfo.isNeedClean() )
 		{
-			// skip if access is denied
+			continue;
 		}
+
+		TaskManager::instance().addTask( [ this, browserInfo ] ()
+		{
+			const auto it = m_browsersCleanMap.find( browserInfo.name );
+			const CleanGroup& cleanGroup = it->second;
+			cleanOptions( browserInfo.cleanOptions, cleanGroup, browserInfo.name );
+		} );
 	}
 }
 
-void core::SystemCleaner::cleanBrowserCache( const common::BrowserInfo& browseInfo )
+void core::SystemCleaner::cleanTemporaryData( const common::TempInfo& tempInfo )
 {
-	TaskManager::instance().addTask( [ this, browseInfo ] ()
+	if ( !tempInfo.isNeedClean() )
 	{
+		return;
+	}
+
+	TaskManager::instance().addTask( [ this, tempInfo ] ()
+	{
+		const auto it = m_tempSystemCleanMap.find( tempInfo.name );
+		const CleanGroup& cleanGroup = it->second;
+		cleanOptions( tempInfo.cleanOptions, cleanGroup, tempInfo.name );
 	} );
 }
 
-void core::SystemCleaner::cleanTemp( const common::TempInfo& tempInfo )
+void core::SystemCleaner::cleanSystemComponents( const common::SystemInfo& systemInfo )
 {
-	/*if ( tempInfo.cleanTempFiles )
+	if ( !systemInfo.isNeedClean() )
 	{
-		TaskManager::instance().addTask( [ this ] ()
-		{
-			auto tempDir = utils::FileSystem::instance().getTempDir();
-			clearDir( tempDir );
-		} );
+		return;
 	}
-	if ( tempInfo.cleanUpdateCache )
+	TaskManager::instance().addTask( [ this, systemInfo ] ()
 	{
-		TaskManager::instance().addTask( [ this ] ()
-		{
-
-		} );
-	}
-	if ( tempInfo.cleanLogs )
-	{
-		TaskManager::instance().addTask( [ this ] ()
-		{
-
-		} );
-	}*/
+		const auto it = m_tempSystemCleanMap.find( systemInfo.name );
+		const CleanGroup& cleanGroup = it->second;
+		cleanOptions( systemInfo.cleanOptions, cleanGroup, systemInfo.name );
+	} );
 }
 
-void core::SystemCleaner::cleanSystem( const common::SystemInfo& systemInfo )
+void core::SystemCleaner::cleanOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName )
 {
-	/*if ( tempSystem.cleanPrefetch )
+	for ( const auto& [ category, cleanOption ] : cleanOptions )
 	{
-		TaskManager::instance().addTask( [ this ] ()
+		if ( !cleanOption.enabled )
 		{
+			continue;
+		}
 
-		} );
-	}
-	if ( tempSystem.cleanRecycleBin )
-	{
-		TaskManager::instance().addTask( [ this ] ()
+		if ( category == Category::RECYCLE_BIN )
 		{
-			HRESULT hr = SHEmptyRecycleBinA( NULL, NULL, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI );
-		} );
-	}*/
+			core::DirInfo dirInfo;
+			SHQUERYRBINFO rbInfo {};
+			rbInfo.cbSize = sizeof( SHQUERYRBINFO );
+
+			const HRESULT hr = SHQueryRecycleBinA( nullptr, &rbInfo );
+			if ( SUCCEEDED( hr ) && rbInfo.i64NumItems > 0 )
+			{
+				dirInfo.countFile = static_cast< uint64_t >( rbInfo.i64NumItems );
+				dirInfo.dirSize = static_cast< uint64_t >( rbInfo.i64Size );
+
+				accumulateResult( common::SYSTEM, cleanOption.displayName, dirInfo );
+				SHEmptyRecycleBinA( nullptr, nullptr, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND );
+			}
+			continue;
+		}
+
+		auto group = cleanGroup.find( category );
+		if ( group == cleanGroup.end() )
+		{
+			continue;
+		}
+
+		const core::DirInfo dirInfo = processPath( group->second, true );
+		accumulateResult( optionsName, cleanOption.displayName, dirInfo );
+	}
 }
 
 void core::SystemCleaner::resetData()

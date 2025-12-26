@@ -31,31 +31,32 @@ namespace core
 		~SystemCleaner(){}
 
 		[[nodiscard]] std::vector< std::string > getInstalledBrowsers();
+		[[nodiscard]] common::Summary getSummary();
 
-		common::Summary getSummary();
 		void clear( const common::CleanTargets& cleanTargets );
 		void analysis( const common::CleanTargets& cleanTargets );
 
 		common::CleanerState getCurrentState();
 		float getCurrentProgress();
-
 	private:
 		void initializeBrowserData();
 		void initializeSystemTempData();
 
-		void analysisTargets( const common::CleanTargets& cleanTargets );
-		void clearTargets( const common::CleanTargets& cleanTargets );
+		[[nodiscard]] DirInfo processPath( const fs::path& pathDir, bool deleteFiles = false );
 
-		[[nodiscard]] DirInfo analysisPath( const fs::path& pathDir );
-		void analysisBrowserCache( const common::BrowserInfo& browseInfo );
-		void analysisTemp( const common::TempInfo& tempInfo );
-		void analysisSystem( const common::SystemInfo& systemInfo );
+		void analysisTargets( const common::CleanTargets& cleanTargets );		
+		void analysisBrowsersInfo( const std::vector< common::BrowserInfo >& browsers );
+		void analysisTemporaryData( const common::TempInfo& tempInfo );
+		void analysisSystemComponents( const common::SystemInfo& systemInfo );
+		void analysisOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName );
 		void accumulateResult( std::string itemName, std::string category, const core::DirInfo dirInfo );
-
-		void clearDir( const fs::path& pathDir );
-		void cleanBrowserCache( const common::BrowserInfo& browseInfo );
-		void cleanTemp( const common::TempInfo& tempInfo );
-		void cleanSystem( const common::SystemInfo& systemInfo );
+	
+		void clearTargets( const common::CleanTargets& cleanTargets );
+		void cleanBrowsersInfo( const std::vector< common::BrowserInfo >& browsers );
+		void cleanTemporaryData( const common::TempInfo& tempInfo );
+		void cleanSystemComponents( const common::SystemInfo& systemInfo );
+		void cleanOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName );
+		//void deletePath( const fs::path& path );
 
 		void resetData();
 
