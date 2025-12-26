@@ -56,7 +56,6 @@ namespace core
 		void cleanTemporaryData( const common::TempInfo& tempInfo );
 		void cleanSystemComponents( const common::SystemInfo& systemInfo );
 		void cleanOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName );
-		//void deletePath( const fs::path& path );
 
 		void resetData();
 

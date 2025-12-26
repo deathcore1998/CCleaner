@@ -12,6 +12,8 @@
 namespace
 {
 	constexpr float ICON_SIZE = 16.f;
+	constexpr float BUTTON_HEIGHT = 30.f;
+	constexpr float VERTICAL_OFFSET = 20.f;
 	constexpr float KILOBYTE = 1024.0f;
 	constexpr float MEGABYTE = KILOBYTE * KILOBYTE;
 
@@ -53,7 +55,8 @@ gui::CleanerPanel::CleanerPanel()
 void gui::CleanerPanel::draw()
 {
 	ImGui::StyleGuard styleGuard( ImGuiCol_ChildBg, IM_COL32( 100, 100, 100, 255 ) );
-	ImGui::BeginChild( "Cleaner panel" );
+	
+	ImGui::Child cleanerPanel( "Cleaner panel" );
 
 	drawTabBar();
 
@@ -67,18 +70,14 @@ void gui::CleanerPanel::draw()
 		ImGui::TableSetupColumn( "Main", columnFlags, tableSize.x * 0.75f );
 
 		ImGui::TableNextColumn();
-		const ImVec2 columnSize = ImGui::GetContentRegionAvail();
-		ImGui::BeginChild( "OptionsColumn" );
 		{
+			ImGui::Child options( "OptionsColumn" );
 			drawOptions();
 		}
-		ImGui::EndChild();
 
 		ImGui::TableNextColumn();
 		drawMain();
 	}
-
-	ImGui::EndChild();
 }
 
 void gui::CleanerPanel::drawTabBar()
@@ -105,9 +104,8 @@ void gui::CleanerPanel::drawMain()
 {
 	const float cursorPosX = ImGui::GetCursorPosX();
 	const ImVec2 contentAvail = ImGui::GetContentRegionAvail();
-	const ImVec2 buttonSize = ImVec2( 100.f, 30.f );
-	const float offset = 10.f;
-	const float buttonPosY = contentAvail.y - buttonSize.y - offset;
+	const ImVec2 buttonSize = ImVec2( 100.f, BUTTON_HEIGHT );
+	const float buttonPosY = contentAvail.y - VERTICAL_OFFSET;
 
 	const common::CleanerState currentSystemState = m_systemCleaner->getCurrentState();
 	const bool isSystemNotIdle = currentSystemState != common::CleanerState::IDLE;
@@ -124,15 +122,14 @@ void gui::CleanerPanel::drawMain()
 	}
 	
 	ImGui::DisabledGuard disabledGuard( isSystemNotIdle );
-	ImGui::SetCursorPos( ImVec2( cursorPosX + offset, buttonPosY ) );
+	ImGui::SetCursorPosY( buttonPosY );
 	if ( ImGui::Button( "Analysis", buttonSize ) )
 	{
 		m_cleanSummary.reset();
 		m_systemCleaner->analysis( m_cleanTargets );
 	}
 
-	ImGui::SameLine();
-	ImGui::SetCursorPosX( contentAvail.x + cursorPosX - offset - buttonSize.x );
+	ImGui::SameLine( contentAvail.x - buttonSize.x );
 	if ( ImGui::Button( "Clear", buttonSize ) )
 	{
 		m_cleanSummary.reset();
@@ -203,10 +200,11 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 	ImGui::Separator();
 
 	const ImVec2 contentAvail = ImGui::GetContentRegionAvail();
+	const float childHieght = contentAvail.y - BUTTON_HEIGHT - VERTICAL_OFFSET * 2;
+	ImGui::Child result( "ResultCleaningOrAnalysis", ImVec2( 0, childHieght ) );
+	
 	constexpr ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
-	const int columnsCount = 3;
-
-	if ( auto table = ImGui::Table( "CleanSummaryTable", columnsCount, flags, ImVec2( 0, contentAvail.y - 100 ) ) )
+	if ( auto table = ImGui::Table( "CleanSummaryTable", 3, flags ) )
 	{
 		constexpr ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_WidthFixed;
 		ImGui::TableSetupColumn( "##name", columnFlags, contentAvail.x * 0.5 );

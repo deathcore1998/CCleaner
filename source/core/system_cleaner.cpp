@@ -120,7 +120,6 @@ float core::SystemCleaner::getCurrentProgress()
 
 void core::SystemCleaner::initializeBrowserData()
 {
-	// TODO not find Cookies !
 	const fs::path local = utils::FileSystem::instance().getLocalAppDataDir();
 	const fs::path roaming = utils::FileSystem::instance().getRoamingAppDataDir();
 
@@ -132,7 +131,7 @@ void core::SystemCleaner::initializeBrowserData()
 	auto addBrowserInfo = [ this ] ( std::string_view browserName, 
 									 const fs::path& basePath,
 									 std::string cachePath = "Cache", 
-									 std::string cockiesPath = "Cookies", 
+									 std::string cockiesPath = "Network\\Cookies", 
 									 std::string historyPath = "History" )
 	{
 		auto addGroup = [ this ] ( std::string_view browserName, Category category, const fs::path& path )

@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "common/scoped_guards.hpp"
 #include "core/window.hpp"
 
 namespace
@@ -17,14 +18,11 @@ gui::TitleBar::TitleBar( core::Window& window ) :
 
 void gui::TitleBar::draw()
 {
-	ImGui::BeginChild( "TitleBar", ImVec2( 0, TITLE_HEIGHT ) );
-
+	ImGui::Child titleBar( "TitleBar", ImVec2( 0, TITLE_HEIGHT ) );
 	ImGui::Text( "System Cleaner" );
 	drawButtons();
 
 	draggingWindow();
-
-	ImGui::EndChild();
 }
 
 void gui::TitleBar::drawButtons()

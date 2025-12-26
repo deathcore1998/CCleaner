@@ -82,4 +82,28 @@ namespace ImGui
 	private:
 		bool m_open = true;
 	};
+
+	class Child
+	{
+	public:
+		Child( std::string_view strId, const ImVec2& size = ImVec2( 0.0f, 0.0f ) )
+		{
+			m_open = ImGui::BeginChild( strId.data(), size );
+		}
+
+		~Child()
+		{
+			if ( m_open )
+			{
+				ImGui::EndChild();
+			}
+		}
+
+		explicit operator bool()const
+		{
+			return m_open;
+		}
+	private:
+		bool m_open = true;
+	};
 }
