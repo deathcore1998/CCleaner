@@ -20,42 +20,32 @@ namespace core
 		uint64_t countFile = 0;
 	};
 
-	using Category = common::CleanCategory;
-	using CleanGroup = std::unordered_map< Category, fs::path >;
-	using CleanMap = std::unordered_map< std::string, CleanGroup >;
+	using CleaningItems = std::vector< common::CleaningItem >;
 
 	class SystemCleaner
 	{
 	public:
-		SystemCleaner();
-		~SystemCleaner(){}
-
-		[[nodiscard]] std::vector< std::string > getInstalledBrowsers();
 		[[nodiscard]] common::Summary getSummary();
 
-		void clear( const common::CleanTargets& cleanTargets );
-		void analysis( const common::CleanTargets& cleanTargets );
+		void clear( const CleaningItems& cleanTargets );
+		void analysis( const CleaningItems& cleanTargets );
 
 		common::CleanerState getCurrentState();
 		float getCurrentProgress();
+
+		[[nodiscard]] CleaningItems collectCleaningItems();
 	private:
-		void initializeBrowserData();
-		void initializeSystemTempData();
+		void initializeBrowserData( CleaningItems& cleaningItems );
+		void initializeSystemTempData( CleaningItems& cleaningItems );
 
 		[[nodiscard]] DirInfo processPath( const fs::path& pathDir, bool deleteFiles = false );
 
-		void analysisTargets( const common::CleanTargets& cleanTargets );		
-		void analysisBrowsersInfo( const std::vector< common::BrowserInfo >& browsers );
-		void analysisTemporaryData( const common::TempInfo& tempInfo );
-		void analysisSystemComponents( const common::SystemInfo& systemInfo );
-		void analysisOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName );
+		void analysisTargets( const CleaningItems& cleaningItems );
+		void analysisOptions( const common::CleaningItem& cleaningItem );
+		void clearTargets( const CleaningItems& cleaningItems );
+		void cleanOptions( const common::CleaningItem& cleaningItem );
+
 		void accumulateResult( std::string itemName, std::string category, const core::DirInfo dirInfo );
-	
-		void clearTargets( const common::CleanTargets& cleanTargets );
-		void cleanBrowsersInfo( const std::vector< common::BrowserInfo >& browsers );
-		void cleanTemporaryData( const common::TempInfo& tempInfo );
-		void cleanSystemComponents( const common::SystemInfo& systemInfo );
-		void cleanOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName );
 
 		void resetData();
 
@@ -66,8 +56,7 @@ namespace core
 		std::mutex m_summaryMutex;
 		common::Summary m_summary;
 
-		CleanMap m_browsersCleanMap;
-		CleanMap m_tempSystemCleanMap;
+		std::unordered_map< uint64_t, fs::path > m_cleanPathCache;
 		std::atomic < common::CleanerState > m_currentState = common::CleanerState::IDLE;
 	};
 }

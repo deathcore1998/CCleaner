@@ -9,6 +9,8 @@
 #include "common/constants.hpp"
 #include "common/scoped_guards.hpp"
 
+#include "utils/dialogs.hpp"
+
 namespace
 {
 	constexpr float ICON_SIZE = 16.f;
@@ -40,16 +42,11 @@ namespace
 
 gui::CleanerPanel::CleanerPanel()
 {
-	m_systemCleaner = std::make_unique< core::SystemCleaner >();
-
-	std::vector< std::string > installedBrowsers = m_systemCleaner->getInstalledBrowsers();
-	for ( std::string& browserName : installedBrowsers )
+	m_cleaningItems = m_systemCleaner.collectCleaningItems();
+	for ( common::CleaningItem& cleanTarget : m_cleaningItems )
 	{
-		m_cleanTargets.browsers.push_back( { browserName, m_textureManager.getTexture( browserName ) } );
+		cleanTarget.textureID = m_textureManager.getTexture( cleanTarget.name );
 	}
-
-	m_cleanTargets.temp.textureID = m_textureManager.getTexture( m_cleanTargets.temp.name );
-	m_cleanTargets.system.textureID = m_textureManager.getTexture( m_cleanTargets.system.name );
 }
 
 void gui::CleanerPanel::draw()
@@ -96,6 +93,11 @@ void gui::CleanerPanel::drawTabBar()
 			ImGui::EndTabItem();
 		}
 
+		if ( ImGui::BeginTabItem( "Custom paths" ) )
+		{
+			m_activeContext = ActiveContext::CUSTOM;
+			ImGui::EndTabItem();
+		}
 		ImGui::EndTabBar();
 	}
 }
@@ -107,7 +109,7 @@ void gui::CleanerPanel::drawMain()
 	const ImVec2 buttonSize = ImVec2( 100.f, BUTTON_HEIGHT );
 	const float buttonPosY = contentAvail.y - VERTICAL_OFFSET;
 
-	const common::CleanerState currentSystemState = m_systemCleaner->getCurrentState();
+	const common::CleanerState currentSystemState = m_systemCleaner.getCurrentState();
 	const bool isSystemNotIdle = currentSystemState != common::CleanerState::IDLE;
 	if ( currentSystemState == common::CleanerState::ANALYSIS_DONE ||
 		 currentSystemState == common::CleanerState::CLEANING_DONE )
@@ -126,48 +128,69 @@ void gui::CleanerPanel::drawMain()
 	if ( ImGui::Button( "Analysis", buttonSize ) )
 	{
 		m_cleanSummary.reset();
-		m_systemCleaner->analysis( m_cleanTargets );
+		m_systemCleaner.analysis( m_cleaningItems );
 	}
 
 	ImGui::SameLine( contentAvail.x - buttonSize.x );
 	if ( ImGui::Button( "Clear", buttonSize ) )
 	{
 		m_cleanSummary.reset();
-		m_systemCleaner->clear( m_cleanTargets );
+		m_systemCleaner.clear( m_cleaningItems );
 	}	
 }
 
 void gui::CleanerPanel::drawOptions()
 {
-	if ( m_activeContext == ActiveContext::TEMP_AND_SYSTEM )
+	const bool isActiveCustomContext = m_activeContext == ActiveContext::CUSTOM;
+	if ( isActiveCustomContext )
 	{
-		common::TempInfo& tempInfo = m_cleanTargets.temp;
-		drawOption( tempInfo.name, tempInfo.cleanOptions );
-
-		common::SystemInfo& systemInfo = m_cleanTargets.system;
-		drawOption( systemInfo.name, systemInfo.cleanOptions );
+		drawCustomPathsMenu();
 	}
-	else if ( m_activeContext == ActiveContext::BROWSER )
+
+	for ( common::CleaningItem& cleanTarget : m_cleaningItems )
 	{
-		for ( common::BrowserInfo& browserInfo : m_cleanTargets.browsers )
+		const bool isBrowserOption = m_activeContext == ActiveContext::BROWSER && cleanTarget.itemType == common::ItemType::BROWSER;
+		const bool isTempOrSystemOption = m_activeContext == ActiveContext::TEMP_AND_SYSTEM &&
+			( cleanTarget.itemType == common::ItemType::TEMP || cleanTarget.itemType == common::ItemType::SYSTEM );
+		const bool isCustomOption = isActiveCustomContext && cleanTarget.itemType == common::ItemType::CUSTOM_PATH;
+
+		if ( isBrowserOption || isTempOrSystemOption || isCustomOption )
 		{
-			drawOption( browserInfo.name, browserInfo.cleanOptions );
+			drawOption( cleanTarget );
 		}
 	}
 }
 
-void gui::CleanerPanel::drawOption( const std::string& optionsName, common::CleanOptionsMap& cleanOptions )
+void gui::CleanerPanel::drawCustomPathsMenu()
 {
-	ImGui::IDGuard guard( optionsName );
-	ImGui::Image( m_textureManager.getTexture( optionsName ), ImVec2( ICON_SIZE, ICON_SIZE ) );	
+	if ( ImGui::Button( "Add path" ) )
+	{
+		std::optional< std::string > result = utils::openSelectionDialog();
+		if ( result.has_value() && !result.value().empty() )
+		{
+			addCustomPath( result.value() );
+		}
+	}
+
+	ImGui::SameLine();
+	if ( ImGui::Button( "Remove all" ) )
+	{
+
+	}
+}
+
+void gui::CleanerPanel::drawOption( common::CleaningItem& cleaningItem )
+{
+	ImGui::IDGuard guard( cleaningItem.name );
+	ImGui::Image( m_textureManager.getTexture( cleaningItem.name ), ImVec2( ICON_SIZE, ICON_SIZE ) );
 	const float checkboxOffset = ImGui::GetCursorPosX();
 
 	ImGui::SameLine();
 	ImGui::AlignTextToFramePadding();
-	ImGui::Text( optionsName.c_str() );
+	ImGui::Text( cleaningItem.name.c_str() );
 	{
 		ImGui::IndentGuard indent( checkboxOffset );
-		for ( common::CleanOption& cleanOption : cleanOptions | std::views::values )
+		for ( common::CleanOption& cleanOption : cleaningItem.cleanOptions )
 		{
 			ImGui::Checkbox( cleanOption.displayName.c_str(), &cleanOption.enabled );
 		}
@@ -178,7 +201,7 @@ void gui::CleanerPanel::drawProgress()
 {
 	ImGui::StyleGuard progressStyle( ImGuiCol_PlotHistogram, GREEN_COLOR );
 	const float length = ImGui::GetContentRegionAvail().x;
-	ImGui::ProgressBar( m_systemCleaner->getCurrentProgress(), ImVec2( length, 20.f ) );
+	ImGui::ProgressBar( m_systemCleaner.getCurrentProgress(), ImVec2( length, 20.f ) );
 }
 
 void gui::CleanerPanel::drawResultCleaningOrAnalysis()
@@ -234,9 +257,14 @@ void gui::CleanerPanel::drawResultCleaningOrAnalysis()
 	}
 }
 
+void gui::CleanerPanel::addCustomPath( std::string newCustomPath )
+{
+
+}
+
 void gui::CleanerPanel::prepareResultsForDisplay()
 {
-	m_cleanSummary = m_systemCleaner->getSummary();
+	m_cleanSummary = m_systemCleaner.getSummary();
 
 	// sort results
 	std::vector< common::CleanResult >& results = m_cleanSummary.results;

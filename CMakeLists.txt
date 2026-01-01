@@ -88,11 +88,14 @@ target_sources(SystemCleaner PRIVATE
 	${CORE_DIR}/window.cpp
 	${CORE_DIR}/window.hpp
 
+	${UTILS_DIR}/dialogs.cpp
+	${UTILS_DIR}/dialogs.hpp
 	${UTILS_DIR}/filesystem.cpp
 	${UTILS_DIR}/filesystem.hpp
 
 	${COMMON_DIR}/cleaner_info.hpp
 	${COMMON_DIR}/constants.hpp
+	${COMMON_DIR}/id_generator.hpp
 	${COMMON_DIR}/scoped_guards.hpp
 )
 

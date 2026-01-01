@@ -7,21 +7,10 @@
 #include <vector>
 
 #include "common/constants.hpp"
+#include "common/id_generator.hpp"
 
 namespace common
 {
-	enum class CleanCategory
-	{
-		CACHE,
-		COOKIES,
-		HISTORY,
-		TEMP_FILES,
-		LOGS,
-		UPDATE_CACHE,
-		PREFETCH,
-		RECYCLE_BIN,
-	};
-
 	enum class CleanerState
 	{
 		IDLE,
@@ -42,69 +31,41 @@ namespace common
 	{
 		bool enabled = true;
 		std::string displayName;
+		uint64_t id = IDGenerator::next();
 	};
 
-	using CleanOptionsMap = std::unordered_map< CleanCategory, CleanOption >;
-
-	struct BaseInfo
+	enum class ItemType
 	{
-		BaseInfo( std::string name ) : name ( std::move( name ) )
+		NONE,
+		BROWSER,
+		TEMP,
+		SYSTEM,
+		CUSTOM_PATH
+	};
+
+	struct CleaningItem
+	{
+		CleaningItem( std::string name, ItemType itemType = ItemType::NONE ) : 
+			name( std::move( name ) ), itemType( itemType )
 		{
 		}
 
 		bool isNeedClean() const noexcept
 		{
-			for ( const auto& [ enabled, displayName ] : cleanOptions | std::views::values )
+			for ( const CleanOption& cleanOption : cleanOptions )
 			{
-				if ( enabled )
+				if ( cleanOption.enabled )
 				{
 					return true;
-				}	
+				}
 			}
 			return false;
 		}
 
 		std::string name;
 		uint64_t textureID = 0;
-		CleanOptionsMap cleanOptions;
-	};
-
-	struct BrowserInfo : public BaseInfo
-	{
-		BrowserInfo( std::string name, uint64_t textureID = 0 ) : BaseInfo( std::move( name ) )
-		{
-			cleanOptions =
-			{
-				{ CleanCategory::CACHE, { true, "Cache" } },
-				{ CleanCategory::COOKIES, { true, "Cookies" } },
-				{ CleanCategory::HISTORY, { true, "History" } },
-			};
-		}
-	};
-
-	struct TempInfo : public BaseInfo
-	{
-		TempInfo() : BaseInfo( common::TEMP )
-		{
-			cleanOptions =
-			{
-				{ CleanCategory::TEMP_FILES, { true, "Temp files" } },
-				{ CleanCategory::UPDATE_CACHE, { true, "Update cache" } },
-				{ CleanCategory::LOGS, { true, "Logs" } },
-			};
-		}
-	};
-
-	struct SystemInfo : public BaseInfo
-	{
-		SystemInfo() : BaseInfo( common::SYSTEM )
-		{
-			cleanOptions =
-			{
-				{ CleanCategory::PREFETCH, { true, "Prefetch" } },
-				{ CleanCategory::RECYCLE_BIN, { true, "Recycle bin" } },
-			};
-		}
+		ItemType itemType;
+		std::vector< CleanOption > cleanOptions;
 	};
 
 	struct CleanResult
@@ -134,12 +95,5 @@ namespace common
 			totalSize = 0;
 			results.clear();
 		}
-	};
-
-	struct CleanTargets
-	{
-		std::vector< BrowserInfo > browsers;
-		TempInfo temp;
-		SystemInfo system;
 	};
 }

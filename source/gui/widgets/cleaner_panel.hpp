@@ -11,7 +11,8 @@ namespace gui
 	enum class ActiveContext : size_t
 	{
 		BROWSER,
-		TEMP_AND_SYSTEM
+		TEMP_AND_SYSTEM,
+		CUSTOM
 	};
 
 	class CleanerPanel
@@ -26,14 +27,17 @@ namespace gui
 		void drawMain();
 
 		void drawOptions();
-		void drawOption( const std::string& optionsName, common::CleanOptionsMap& cleanOptions );
+		void drawOption( common::CleaningItem& cleaningItem );
+		void drawCustomPathsMenu();
 		void drawProgress();
 		void drawResultCleaningOrAnalysis();
 
+		void addCustomPath( std::string newCustomPath );
+
 		void prepareResultsForDisplay();
 
-		std::unique_ptr< core::SystemCleaner > m_systemCleaner = nullptr;
-		common::CleanTargets m_cleanTargets;
+		core::SystemCleaner m_systemCleaner;
+		std::vector< common::CleaningItem > m_cleaningItems;
 		common::Summary m_cleanSummary;
 
 		ActiveContext m_activeContext = ActiveContext::TEMP_AND_SYSTEM;

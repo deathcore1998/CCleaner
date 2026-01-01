@@ -27,19 +27,19 @@ void gui::TitleBar::draw()
 
 void gui::TitleBar::drawButtons()
 {
-	const float buttonWidth = 20.0f;
+	constexpr ImVec2 buttonSize = ImVec2( 20.0f, 0 );
 	const float spacing = ImGui::GetStyle().ItemSpacing.x;
-	const float totalWidth = buttonWidth * 2 + spacing;
+	const float totalWidth = buttonSize.x * 2 + spacing;
 	const float availableWidth = ImGui::GetContentRegionAvail().x;
 
 	ImGui::SameLine( availableWidth - totalWidth );
-	if ( ImGui::Button( "_", ImVec2( buttonWidth, 0 ) ) )
+	if ( ImGui::Button( MINIMIZE, buttonSize ) )
 	{
 		m_mainWindow.rollUp();
 	}
 
 	ImGui::SameLine();
-	if ( ImGui::Button( "X", ImVec2( buttonWidth, 0 ) ) )
+	if ( ImGui::Button( CLOSE, buttonSize ) )
 	{
 		m_mainWindow.close();
 	}

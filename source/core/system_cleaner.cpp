@@ -10,28 +10,11 @@
 
 namespace
 {
+	constexpr std::string_view RECYCLE_BIN = "Recycle bin";
+	constexpr std::string_view CACHE = "Cache";
+	constexpr std::string_view HISTORY = "History";
+
 	constexpr float EPS = 0.001f;
-}
-
-core::SystemCleaner::SystemCleaner()
-{
-	initializeBrowserData();
-
-	TaskManager::instance().addTask( [ this ] ()
-	{
-		initializeSystemTempData();
-	} );
-}
-
-std::vector< std::string > core::SystemCleaner::getInstalledBrowsers()
-{
-	std::vector< std::string > browserNames;
-	for ( const auto& [ name, cleanItem ] : m_browsersCleanMap )
-	{
-		browserNames.push_back( name );
-	}
-
-	return browserNames;
 }
 
 common::Summary core::SystemCleaner::getSummary()
@@ -41,7 +24,7 @@ common::Summary core::SystemCleaner::getSummary()
 	return m_summary;
 }
 
-void core::SystemCleaner::clear( const common::CleanTargets& cleanTargets )
+void core::SystemCleaner::clear( const CleaningItems& cleanTargets )
 {
 	using clock = std::chrono::steady_clock;
 	const auto startTime = clock::now();
@@ -81,7 +64,7 @@ void core::SystemCleaner::clear( const common::CleanTargets& cleanTargets )
 	} );
 }
 
-void core::SystemCleaner::analysis( const common::CleanTargets& cleanTargets )
+void core::SystemCleaner::analysis( const CleaningItems& cleanTargets )
 {
 	using clock = std::chrono::steady_clock;
 
@@ -118,7 +101,16 @@ float core::SystemCleaner::getCurrentProgress()
 	return m_progress;
 }
 
-void core::SystemCleaner::initializeBrowserData()
+core::CleaningItems core::SystemCleaner::collectCleaningItems()
+{
+	CleaningItems cleaningItems;
+	initializeBrowserData( cleaningItems );
+	initializeSystemTempData( cleaningItems );
+
+	return cleaningItems;
+}
+
+void core::SystemCleaner::initializeBrowserData( CleaningItems& cleaningItems )
 {
 	const fs::path local = utils::FileSystem::instance().getLocalAppDataDir();
 	const fs::path roaming = utils::FileSystem::instance().getRoamingAppDataDir();
@@ -128,23 +120,34 @@ void core::SystemCleaner::initializeBrowserData()
 		return fs::exists( local / folderName ) || fs::exists( roaming / folderName );
 	};
 
-	auto addBrowserInfo = [ this ] ( std::string_view browserName, 
+	auto addBrowserInfo = [ this, &cleaningItems ] ( std::string_view browserName,
 									 const fs::path& basePath,
-									 std::string cachePath = "Cache", 
-									 std::string cockiesPath = "Network\\Cookies", 
-									 std::string historyPath = "History" )
+									 std::string_view cachePath = CACHE,
+									 std::string_view cookiesPath = "Network\\Cookies",
+									 std::string_view historyPath = HISTORY )
 	{
-		auto addGroup = [ this ] ( std::string_view browserName, Category category, const fs::path& path )
+		common::CleaningItem item( browserName.data(), common::ItemType::BROWSER );
+		std::vector< std::pair< std::string_view, fs::path > > options =
 		{
-			if ( fs::exists( path ) )
-			{
-				m_browsersCleanMap[ browserName.data() ].insert( { category, path } );
-			}
+			{ CACHE, basePath / cachePath },
+			{ "Cookies", basePath / cookiesPath},
+			{ HISTORY, basePath / historyPath }
 		};
 
-		addGroup( browserName, Category::CACHE, basePath / cachePath );
-		addGroup( browserName, Category::COOKIES, basePath / cockiesPath );
-		addGroup( browserName, Category::HISTORY, basePath / historyPath );
+		for ( const auto& [ displayName, fullPath ] : options )
+		{
+			if ( fs::exists( fullPath ) )
+			{
+				common::CleanOption option { .displayName = displayName.data() };
+				m_cleanPathCache[ option.id ] = fullPath;
+				item.cleanOptions.push_back( std::move( option ) );
+			}
+		}
+
+		if ( !item.cleanOptions.empty() )
+		{
+			cleaningItems.push_back( std::move( item ) );
+		}
 	};
 
 	if ( isBrowserInstalled( common::GOOGLE_CHROME_PATH ) )
@@ -166,7 +169,8 @@ void core::SystemCleaner::initializeBrowserData()
 				}
 
 				const fs::path profilePath = entry.path();
-				addBrowserInfo( common::MOZILLA_FIREFOX, profilePath, "cache2\\entries", "cookies.sqlite", "places.sqlite" );
+				addBrowserInfo( common::MOZILLA_FIREFOX, profilePath, 
+								"cache2\\entries", "cookies.sqlite", "places.sqlite" );
 			}
 		}
 	}
@@ -190,25 +194,55 @@ void core::SystemCleaner::initializeBrowserData()
 	}
 }
 
-void core::SystemCleaner::initializeSystemTempData()
+void core::SystemCleaner::initializeSystemTempData( CleaningItems& cleaningItems )
 {
 	auto& fs = utils::FileSystem::instance();
 
-	m_tempSystemCleanMap[ common::TEMP ].insert( { Category::TEMP_FILES, fs.getTempDir() } );
-	m_tempSystemCleanMap[ common::TEMP ].insert( { Category::UPDATE_CACHE, fs.getUpdateCacheDir() });
-	m_tempSystemCleanMap[ common::TEMP ].insert( { Category::LOGS, fs.getLogsDir() } );
+	const auto addCleaningItem = [ & ] ( std::string name, common::ItemType type, 
+		const std::vector< std::pair< std::string_view, fs::path > >& options )
+	{
+		common::CleaningItem item( name, type );
+		for ( const auto& [ displayName, fullPath ] : options )
+		{
+			common::CleanOption option { .displayName = displayName.data() };
+			m_cleanPathCache[ option.id ] = fullPath;
+			item.cleanOptions.push_back( std::move( option ) );			
+		}
+		cleaningItems.push_back( std::move( item ) );
+	};
 
-	m_tempSystemCleanMap[ common::SYSTEM ].insert( { Category::PREFETCH, fs.getPrefetchDir() } );
+	addCleaningItem( common::TEMP, common::ItemType::TEMP,
+	{
+		{ "Temp files", fs.getTempDir() },
+		{ "Update cache", fs.getUpdateCacheDir() },
+		{ "Logs", fs.getLogsDir() }
+	} );
+
+	addCleaningItem( common::SYSTEM, common::ItemType::SYSTEM,
+	{
+		{ "Prefetch", fs.getPrefetchDir() },
+		{ RECYCLE_BIN, "" }
+	} );
 }
 
-void core::SystemCleaner::analysisTargets( const common::CleanTargets& cleanTargets )
+void core::SystemCleaner::analysisTargets( const CleaningItems& cleaningItems )
 {
 	resetData();
 	m_currentState = common::CleanerState::ANALYZING;
 
-	analysisBrowsersInfo( cleanTargets.browsers );
-	analysisTemporaryData( cleanTargets.temp );
-	analysisSystemComponents( cleanTargets.system );
+	for ( const common::CleaningItem& cleaningItem : cleaningItems )
+	{
+		if ( !cleaningItem.isNeedClean() )
+		{
+			continue;
+		}
+		++countAnalysTasks;
+		
+		TaskManager::instance().addTask( [ this, cleaningItem ] ()
+		{
+			analysisOptions( cleaningItem );
+		} );
+	}
 }
 
 core::DirInfo core::SystemCleaner::processPath( const fs::path& pathDir, bool deleteFiles )
@@ -251,68 +285,16 @@ core::DirInfo core::SystemCleaner::processPath( const fs::path& pathDir, bool de
 	return info;
 }
 
-void core::SystemCleaner::analysisBrowsersInfo( const std::vector< common::BrowserInfo >& browsers )
+void core::SystemCleaner::analysisOptions( const common::CleaningItem& cleaningItem )
 {
-	for ( const common::BrowserInfo& browserInfo : browsers )
-	{
-		if ( !browserInfo.isNeedClean() )
-		{
-			continue;
-		}
-		++countAnalysTasks;
-
-		TaskManager::instance().addTask( [ this, browserInfo ] ()
-		{
-			const auto it = m_browsersCleanMap.find( browserInfo.name );
-			const CleanGroup& cleanGroup = it->second;
-			analysisOptions( browserInfo.cleanOptions, cleanGroup, browserInfo.name );
-		} );
-	}
-}
-
-void core::SystemCleaner::analysisTemporaryData( const common::TempInfo& tempInfo )
-{
-	if ( !tempInfo.isNeedClean() )
-	{
-		return;
-	}
-
-	++countAnalysTasks;
-
-	TaskManager::instance().addTask( [ this, tempInfo ] ()
-	{
-		const auto it = m_tempSystemCleanMap.find( tempInfo.name );
-		const CleanGroup& cleanGroup = it->second;
-		analysisOptions( tempInfo.cleanOptions, cleanGroup, tempInfo.name );
-	} );
-}
-
-void core::SystemCleaner::analysisSystemComponents( const common::SystemInfo& systemInfo )
-{
-	if ( !systemInfo.isNeedClean() )
-	{
-		return;
-	}
-	++countAnalysTasks;
-
-	TaskManager::instance().addTask( [ this, systemInfo ] ()
-	{
-		const auto it = m_tempSystemCleanMap.find( systemInfo.name );
-		const CleanGroup& cleanGroup = it->second;
-		analysisOptions( systemInfo.cleanOptions, cleanGroup, systemInfo.name );
-	} );
-}
-
-void core::SystemCleaner::analysisOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName )
-{
-	for ( const auto& [ category, cleanOption ] : cleanOptions )
+	for ( const common::CleanOption& cleanOption : cleaningItem.cleanOptions )
 	{
 		if ( !cleanOption.enabled )
 		{
 			continue;
 		}
 
-		if ( category == Category::RECYCLE_BIN )
+		if ( cleanOption.displayName == RECYCLE_BIN )
 		{
 			core::DirInfo dirInfo {};
 
@@ -330,92 +312,40 @@ void core::SystemCleaner::analysisOptions( const common::CleanOptionsMap& cleanO
 			continue;
 		}
 
-		auto group = cleanGroup.find( category );
-		if ( group == cleanGroup.end() )
-		{
-			continue;
-		}
-
-		const core::DirInfo dirInfo = processPath( group->second );
-		accumulateResult( optionsName, cleanOption.displayName, dirInfo );
+		const core::DirInfo dirInfo = processPath( m_cleanPathCache[ cleanOption.id ] );
+		accumulateResult( cleaningItem.name, cleanOption.displayName, dirInfo );
 	}
 }
 
-void core::SystemCleaner::accumulateResult( std::string itemName, std::string category, const core::DirInfo dirInfo )
-{
-	std::scoped_lock lock( m_summaryMutex );
-	m_summary.totalFiles += dirInfo.countFile;
-	m_summary.totalSize += dirInfo.dirSize;
-	m_summary.results.push_back( { std::move( itemName ), std::move( category ), dirInfo.countFile, dirInfo.dirSize } );
-}
-
-void core::SystemCleaner::clearTargets( const common::CleanTargets& cleanTargets )
+void core::SystemCleaner::clearTargets( const CleaningItems& cleaningItems )
 {
 	resetData();
 	m_currentState = common::CleanerState::CLEANING;
 
-	cleanBrowsersInfo( cleanTargets.browsers );
-	cleanTemporaryData( cleanTargets.temp );
-	cleanSystemComponents( cleanTargets.system );
-}
-
-void core::SystemCleaner::cleanBrowsersInfo( const std::vector< common::BrowserInfo >& browsers )
-{
-	for ( const common::BrowserInfo& browserInfo : browsers )
+	for ( const common::CleaningItem& cleaningItem : cleaningItems )
 	{
-		if ( !browserInfo.isNeedClean() )
+		if ( !cleaningItem.isNeedClean() )
 		{
 			continue;
 		}
 
-		TaskManager::instance().addTask( [ this, browserInfo ] ()
+		TaskManager::instance().addTask( [ this, cleaningItem ] ()
 		{
-			const auto it = m_browsersCleanMap.find( browserInfo.name );
-			const CleanGroup& cleanGroup = it->second;
-			cleanOptions( browserInfo.cleanOptions, cleanGroup, browserInfo.name );
+			cleanOptions( cleaningItem );
 		} );
 	}
 }
 
-void core::SystemCleaner::cleanTemporaryData( const common::TempInfo& tempInfo )
+void core::SystemCleaner::cleanOptions( const common::CleaningItem& cleaningItem )
 {
-	if ( !tempInfo.isNeedClean() )
-	{
-		return;
-	}
-
-	TaskManager::instance().addTask( [ this, tempInfo ] ()
-	{
-		const auto it = m_tempSystemCleanMap.find( tempInfo.name );
-		const CleanGroup& cleanGroup = it->second;
-		cleanOptions( tempInfo.cleanOptions, cleanGroup, tempInfo.name );
-	} );
-}
-
-void core::SystemCleaner::cleanSystemComponents( const common::SystemInfo& systemInfo )
-{
-	if ( !systemInfo.isNeedClean() )
-	{
-		return;
-	}
-	TaskManager::instance().addTask( [ this, systemInfo ] ()
-	{
-		const auto it = m_tempSystemCleanMap.find( systemInfo.name );
-		const CleanGroup& cleanGroup = it->second;
-		cleanOptions( systemInfo.cleanOptions, cleanGroup, systemInfo.name );
-	} );
-}
-
-void core::SystemCleaner::cleanOptions( const common::CleanOptionsMap& cleanOptions, const CleanGroup& cleanGroup, const std::string& optionsName )
-{
-	for ( const auto& [ category, cleanOption ] : cleanOptions )
+	for ( const common::CleanOption& cleanOption : cleaningItem.cleanOptions )
 	{
 		if ( !cleanOption.enabled )
 		{
 			continue;
 		}
 
-		if ( category == Category::RECYCLE_BIN )
+		if ( cleanOption.displayName == RECYCLE_BIN )
 		{
 			core::DirInfo dirInfo;
 			SHQUERYRBINFO rbInfo {};
@@ -433,15 +363,17 @@ void core::SystemCleaner::cleanOptions( const common::CleanOptionsMap& cleanOpti
 			continue;
 		}
 
-		auto group = cleanGroup.find( category );
-		if ( group == cleanGroup.end() )
-		{
-			continue;
-		}
-
-		const core::DirInfo dirInfo = processPath( group->second, true );
-		accumulateResult( optionsName, cleanOption.displayName, dirInfo );
+		const core::DirInfo dirInfo = processPath( m_cleanPathCache[ cleanOption.id ], true );
+		accumulateResult( cleaningItem.name, cleanOption.displayName, dirInfo );
 	}
+}
+
+void core::SystemCleaner::accumulateResult( std::string itemName, std::string category, const core::DirInfo dirInfo )
+{
+	std::scoped_lock lock( m_summaryMutex );
+	m_summary.totalFiles += dirInfo.countFile;
+	m_summary.totalSize += dirInfo.dirSize;
+	m_summary.results.push_back( { std::move( itemName ), std::move( category ), dirInfo.countFile, dirInfo.dirSize } );
 }
 
 void core::SystemCleaner::resetData()

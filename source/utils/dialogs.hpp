@@ -1,0 +1,37 @@
+#pragma once
+
+#include <optional>
+#include <string>
+
+namespace utils
+{
+	// blocking main thread
+	std::optional< std::string > openSelectionDialog(); 
+
+    enum ButtonFlag : uint32_t
+    {
+        BUTTON_OK = 0x0001,
+        BUTTON_CANCEL = 0x0002,
+        BUTTON_YES = 0x0004,
+        BUTTON_NO = 0x0008,
+    };
+
+    enum BoxType : uint32_t
+    {
+        TYPE_INFO = 0,
+        TYPE_WARNING = 1,
+        TYPE_ERROR = 2,
+        TYPE_QUESTION = 3
+    };
+
+    enum Result : int32_t
+    {
+        RESULT_NONE = 0,
+        RESULT_OK = 1,
+        RESULT_CANCEL = 2,
+        RESULT_YES = 3,
+        RESULT_NO = 4,
+    };
+
+    Result openMessageBox( std::string_view title, std::string_view message, ButtonFlag buttons = BUTTON_OK, BoxType type = TYPE_INFO );
+}
